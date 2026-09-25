@@ -1,0 +1,612 @@
+/* ==========================================================================
+   Penny Dreadful
+   --------------------------------------------------------------------------
+   Tokens live on `.penny-dreadful`, which every window, dialog and chat card
+   of the system wears. The scoreboard is theme-independent by design: a dark
+   translucent title card over whatever theme the viewer runs, light text on
+   it. Sheet, dialog and chat card follow the core theme instead.
+
+   THE BOARD HAS ONE UNIT. `--pd-u` is a pixel multiplied by the viewer's
+   zoom (`--pd-scale`, set on the window element by the application). Every
+   size inside the board is a multiple of it, so the zoom buttons grow the
+   fonts, the pennies, the buttons and the gaps together, and nothing is
+   left behind at its old size.
+   ========================================================================== */
+
+/* `.pd-chat` is the chat message a flip card sits in (module/chat.js), so the card's coins get the copper too. */
+.penny-dreadful,
+.pd-chat {
+    --pd-copper: #b87333;
+    --pd-copper-hi: #e3a86f;
+    --pd-copper-lo: #6e3f16;
+    --pd-copper-ink: #2a1708;
+    --pd-blood: #c0392b;
+    --pd-spot: #ffcf5a;
+    --pd-ok: #5fd36b;
+}
+
+/* --------------------------------------------------------------------------
+   The scoreboard window
+   -------------------------------------------------------------------------- */
+
+.pd-scoreboard.application {
+    --pd-scale: 1;
+    --pd-u: calc(1px * var(--pd-scale));
+    --pd-bg: rgba(14, 10, 12, 0.78);
+    --pd-fg: #efe6d8;
+    --pd-fg-dim: rgba(239, 230, 216, 0.5);
+    --pd-line: rgba(255, 255, 255, 0.12);
+    --color-text-primary: var(--pd-fg);
+    --color-text-secondary: var(--pd-fg-dim);
+    background: var(--pd-bg);
+    color: var(--pd-fg);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--pd-line);
+    border-radius: calc(6 * var(--pd-u));
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.6);
+    font-size: calc(12 * var(--pd-u));
+    min-width: 0;
+    /* Its own content's width, not the space it happens to have. Popped out, the
+       board fills a window exactly its size, and a shrink-to-fit width measures
+       that window: zooming in then never asks the window to grow. */
+    width: max-content;
+}
+
+.pd-scoreboard .window-header {
+    background: transparent;
+    border-bottom: 1px solid var(--pd-line);
+    color: var(--pd-fg);
+    min-height: calc(26 * var(--pd-u));
+    height: calc(26 * var(--pd-u));
+    padding: 0 calc(6 * var(--pd-u)) 0 calc(8 * var(--pd-u));
+    gap: calc(6 * var(--pd-u));
+    font-size: calc(12 * var(--pd-u));
+    cursor: grab;
+}
+
+.pd-scoreboard .window-header .window-title {
+    font-size: calc(13 * var(--pd-u));
+    letter-spacing: 0.02em;
+    color: var(--pd-fg);
+}
+
+.pd-scoreboard .window-header .window-icon {
+    color: var(--pd-copper-hi);
+    font-size: calc(12 * var(--pd-u));
+}
+
+/* The close control is removed in _renderFrame; this is the belt to that brace. */
+.pd-scoreboard .window-header .header-control[data-action="close"] {
+    display: none;
+}
+
+.pd-scoreboard .window-content {
+    background: transparent;
+    color: var(--pd-fg);
+    padding: calc(4 * var(--pd-u)) calc(8 * var(--pd-u)) calc(6 * var(--pd-u));
+    overflow: visible;
+    gap: 0;
+}
+
+.pd-board {
+    display: flex;
+    flex-direction: column;
+    gap: calc(4 * var(--pd-u));
+    white-space: nowrap;
+}
+
+.pd-toolbar {
+    display: flex;
+    align-items: center;
+    gap: calc(2 * var(--pd-u));
+    min-height: calc(20 * var(--pd-u));
+}
+
+.pd-zoom {
+    display: inline-flex;
+    margin-left: auto;
+    padding-left: calc(8 * var(--pd-u));
+}
+
+.pd-empty {
+    margin: calc(4 * var(--pd-u)) 0;
+    color: var(--pd-fg-dim);
+    font-style: italic;
+}
+
+/* Compact controls ----------------------------------------------------- */
+
+.pd-scoreboard button {
+    --button-size: calc(20 * var(--pd-u));
+    height: calc(20 * var(--pd-u));
+    min-height: calc(20 * var(--pd-u));
+    line-height: calc(18 * var(--pd-u));
+    padding: 0 calc(6 * var(--pd-u));
+    margin: 0;
+    font-size: calc(11 * var(--pd-u));
+    border: 1px solid var(--pd-line);
+    border-radius: calc(10 * var(--pd-u));
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--pd-fg);
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.pd-scoreboard button:hover,
+.pd-scoreboard button:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--pd-copper-hi);
+    box-shadow: none;
+    outline: none;
+}
+
+.pd-scoreboard button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.pd-scoreboard button.pd-icon {
+    width: calc(20 * var(--pd-u));
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+}
+
+.pd-scoreboard button.pd-icon i {
+    margin: 0;
+    font-size: calc(12 * var(--pd-u));
+}
+
+.pd-scoreboard .pd-toolbar button.pd-icon {
+    color: var(--pd-copper-hi);
+}
+
+/* A toggle that is on (the Director holding the coins) */
+.pd-scoreboard .pd-toolbar button.pd-icon.on {
+    color: var(--pd-spot);
+    background: rgba(255, 207, 90, 0.14);
+    border-color: rgba(255, 207, 90, 0.4);
+}
+
+
+
+/* The table ---------------------------------------------------------------- */
+
+.pd-table {
+    border-collapse: collapse;
+    margin: 0;
+    width: auto;
+    background: transparent;
+    border: none;
+    font-size: calc(12 * var(--pd-u));
+}
+
+.pd-table td {
+    padding: calc(2 * var(--pd-u)) calc(3 * var(--pd-u));
+    vertical-align: middle;
+    border: none;
+    height: calc(30 * var(--pd-u));
+}
+
+.pd-table tr + tr td {
+    border-top: 1px solid var(--pd-line);
+}
+
+/* The divider above the NPCs */
+
+.pd-table tr.pd-section td {
+    height: auto;
+    padding: calc(5 * var(--pd-u)) calc(3 * var(--pd-u)) calc(1 * var(--pd-u));
+    border-top: 1px solid var(--pd-line);
+    font-size: calc(10 * var(--pd-u));
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pd-fg-dim);
+}
+
+.pd-table tr.pd-section + tr td {
+    border-top: none;
+}
+
+.pd-table tr.spotlight {
+    background: rgba(255, 207, 90, 0.14);
+    box-shadow: inset calc(3 * var(--pd-u)) 0 0 var(--pd-spot);
+}
+
+.pd-table tr.dead {
+    opacity: 0.55;
+}
+
+.pd-table tr.dead .pd-name {
+    text-decoration: line-through;
+    text-decoration-color: var(--pd-blood);
+}
+
+.pd-table tr.pending .pd-name-btn,
+.pd-table tr.pending .pd-name-text {
+    color: var(--pd-spot);
+}
+
+/* Name cell */
+
+.pd-name {
+    padding-right: calc(10 * var(--pd-u));
+    max-width: calc(280 * var(--pd-u));
+    line-height: 1.1;
+}
+
+/* The name is the row: nearly twice the size of everything else on it. */
+.pd-name-btn,
+.pd-name-text {
+    display: inline;
+    font-weight: 700;
+    font-size: calc(22 * var(--pd-u));
+    letter-spacing: 0.01em;
+}
+
+/* Repeats the size: the board's general button rule is more specific than
+   .pd-name-btn and shrank an owner's own name (every name, for the Director). */
+.pd-scoreboard button.pd-name-btn {
+    font-size: calc(22 * var(--pd-u));
+    font-weight: 700;
+    height: auto;
+    min-height: 0;
+    line-height: 1.2;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+    width: auto;
+}
+
+.pd-scoreboard button.pd-name-btn:hover {
+    background: none;
+    text-decoration: underline;
+}
+
+/* Scoped to the table: a bare .pd-player once matched <body> on every player's
+   client (the old body class) and broke Foundry's sidebar, chat log included. */
+.pd-table .pd-player {
+    display: block;
+    font-size: calc(11 * var(--pd-u));
+    line-height: 1.1;
+    color: var(--pd-fg-dim);
+}
+
+.pd-table .pd-player::before {
+    content: "";
+    display: inline-block;
+    width: calc(6 * var(--pd-u));
+    height: calc(6 * var(--pd-u));
+    border-radius: 50%;
+    margin-right: calc(4 * var(--pd-u));
+    background: var(--pd-fg-dim);
+    vertical-align: middle;
+}
+
+.pd-table .pd-player.active::before {
+    background: var(--pd-ok);
+}
+
+.pd-scoreboard button.pd-spot {
+    width: calc(16 * var(--pd-u));
+    height: calc(16 * var(--pd-u));
+    min-height: calc(16 * var(--pd-u));
+    line-height: calc(14 * var(--pd-u));
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--pd-fg-dim);
+    opacity: 0.4;
+    vertical-align: middle;
+    margin-right: calc(2 * var(--pd-u));
+}
+
+.pd-scoreboard button.pd-spot:hover {
+    opacity: 1;
+    background: none;
+}
+
+.pd-scoreboard .pd-spot.on {
+    color: var(--pd-spot);
+    opacity: 1;
+}
+
+.pd-scoreboard i.pd-spot {
+    font-size: calc(10 * var(--pd-u));
+    margin-right: calc(3 * var(--pd-u));
+    vertical-align: middle;
+}
+
+/* Penny cells */
+
+.pd-penny {
+    width: calc(18 * var(--pd-u));
+    text-align: center;
+    font-size: calc(14 * var(--pd-u));
+    line-height: 1;
+}
+
+.pd-penny.empty i {
+    color: var(--pd-fg-dim);
+    opacity: 0.45;
+    font-size: calc(12 * var(--pd-u));
+}
+
+.pd-coin {
+    position: relative;
+    display: inline-block;
+    width: calc(14 * var(--pd-u));
+    height: calc(14 * var(--pd-u));
+    line-height: calc(14 * var(--pd-u));
+}
+
+.pd-coin .fa-circle {
+    color: var(--pd-copper);
+    font-size: calc(14 * var(--pd-u));
+    text-shadow: 0 0 2px var(--pd-copper-lo);
+}
+
+.pd-coin .fa-cent-sign {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: calc(8 * var(--pd-u));
+    color: var(--pd-copper-ink);
+}
+
+.pd-dead {
+    width: calc(18 * var(--pd-u));
+    text-align: center;
+}
+
+.pd-dead i {
+    color: var(--pd-blood);
+    font-size: calc(14 * var(--pd-u));
+    text-shadow: 0 0 4px rgba(192, 57, 43, 0.6);
+}
+
+/* Actions cell */
+
+.pd-actions {
+    padding-left: calc(8 * var(--pd-u));
+}
+
+.pd-actions > * {
+    vertical-align: middle;
+}
+
+.pd-scoreboard button.pd-flip {
+    background: var(--pd-copper);
+    border-color: var(--pd-copper-hi);
+    color: var(--pd-copper-ink);
+    font-weight: 700;
+    animation: pd-pulse 1.6s ease-in-out infinite;
+}
+
+.pd-scoreboard button.pd-flip:hover {
+    background: var(--pd-copper-hi);
+}
+
+@keyframes pd-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(227, 168, 111, 0.6); }
+    50% { box-shadow: 0 0 0 5px rgba(227, 168, 111, 0); }
+}
+
+.pd-flipping,
+.pd-pending {
+    display: inline-block;
+    padding: 0 calc(6 * var(--pd-u));
+    font-size: calc(11 * var(--pd-u));
+    color: var(--pd-spot);
+}
+
+.pd-ds {
+    display: inline-flex;
+    gap: calc(2 * var(--pd-u));
+    margin-left: calc(6 * var(--pd-u));
+}
+
+.pd-scoreboard button.pd-pill {
+    width: calc(18 * var(--pd-u));
+    height: calc(18 * var(--pd-u));
+    min-height: calc(18 * var(--pd-u));
+    line-height: calc(16 * var(--pd-u));
+    padding: 0;
+    border-radius: 50%;
+    font-size: calc(10 * var(--pd-u));
+    font-weight: 700;
+}
+
+.pd-scoreboard button.pd-pill.active {
+    background: var(--pd-copper);
+    border-color: var(--pd-copper-hi);
+    color: var(--pd-copper-ink);
+}
+
+.pd-adjust {
+    display: inline-flex;
+    gap: 0;
+    margin-left: calc(4 * var(--pd-u));
+}
+
+.pd-scoreboard button.pd-remove {
+    color: var(--pd-blood);
+}
+
+/* --------------------------------------------------------------------------
+   The sheet (follows the core theme)
+   -------------------------------------------------------------------------- */
+
+.pd-sheet .window-content {
+    padding: 8px 12px 12px;
+}
+
+.pd-sheet-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pd-sheet .form-group {
+    margin: 0;
+}
+
+.pd-sheet .pd-readonly {
+    color: var(--color-text-secondary);
+    font-style: italic;
+    line-height: var(--input-height, 28px);
+}
+
+/* --------------------------------------------------------------------------
+   The chat card (follows the core theme)
+   -------------------------------------------------------------------------- */
+
+.pd-flip-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+.pd-flip-card .pd-coins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.pd-flip-card .pd-coin {
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+}
+
+.pd-flip-card .pd-coin .fa-circle {
+    font-size: 18px;
+}
+
+.pd-flip-card .pd-coin .fa-cent-sign {
+    font-size: 10px;
+}
+
+.pd-flip-card .pd-coin.tails i {
+    color: var(--color-text-secondary);
+    opacity: 0.55;
+    font-size: 16px;
+}
+
+.pd-flip-card .pd-tally {
+    font-size: var(--font-size-12, 12px);
+    color: var(--color-text-secondary);
+}
+
+/* The outcome: one word on a solid badge, then the rest of the sentence as plain text. */
+.pd-flip-card .pd-outcome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.pd-flip-card .pd-badge {
+    display: inline-block;
+    padding: 1px 9px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background: #2e8b57;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.pd-flip-card.pd-fail .pd-badge {
+    background: var(--pd-copper);
+}
+
+.pd-flip-card.pd-death .pd-badge {
+    background: var(--pd-blood);
+}
+
+/* The title line is the whole statement (the message's alias), on a solid band. */
+.pd-chat .message-header {
+    background: var(--pd-copper-ink);
+    color: #efe6d8;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.pd-chat .message-header .message-sender {
+    color: #efe6d8;
+    font-weight: 700;
+    white-space: normal;
+}
+
+.pd-chat .message-header .message-metadata,
+.pd-chat .message-header .message-metadata a {
+    color: rgba(239, 230, 216, 0.7);
+}
+
+
+
+body.theme-dark .pd-flip-card .pd-coin .fa-circle {
+    text-shadow: 0 0 4px var(--pd-copper-lo);
+}
+
+body.theme-dark .pd-flip-card .pd-badge {
+    background: #2f9a5f;
+}
+
+body.theme-dark .pd-flip-card.pd-fail .pd-badge {
+    background: var(--pd-copper);
+}
+
+body.theme-dark .pd-flip-card.pd-death .pd-badge {
+    background: var(--pd-blood);
+}
+
+/* -----------------------------------------------------------------------------
+   The system's journals (flagged by tools/import/): no rename field repeating
+   the name the window title already shows. See registerJournalHooks.
+   -------------------------------------------------------------------------- */
+
+.pd-journal .journal-header {
+    display: none;
+}
+
+/* -----------------------------------------------------------------------------
+   The Director's flip request in chat (module/request.js). The button is drawn
+   per client, never stored; the card's classes are an API like the flip card's.
+   -------------------------------------------------------------------------- */
+
+.pd-request-card .pd-request-action {
+    margin: 4px 0 2px;
+}
+
+.pd-request-card button.pd-request-flip {
+    width: 100%;
+    background: var(--pd-copper);
+    border: 1px solid var(--pd-copper-hi);
+    color: var(--pd-copper-ink);
+    font-weight: 700;
+    font-size: 1.1em;
+    line-height: 2;
+}
+
+.pd-request-card button.pd-request-flip:hover {
+    background: var(--pd-copper-hi);
+}
+
+.pd-request-card .pd-request-status {
+    margin: 0;
+    font-style: italic;
+    opacity: 0.8;
+}
+

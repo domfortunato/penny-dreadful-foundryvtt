@@ -1,0 +1,42 @@
+_id: VV0ezsslj1ZG9qbc
+name: Penny Dreadful Rules
+pages:
+  - _id: zGAvggN7ohTw0QTx
+    name: Player-Facing Rules
+    type: text
+    title:
+      show: true
+      level: 1
+    text:
+      content: '<p>This is a Horror Movie. The game master is called &quot;The Director.&quot;</p> <p>🪙 Here is my adaptation of the complete player facing ruleset for the game&#39;s system, &quot;Penny Dreadful&quot;</p> <ul> <li>You have a character, but you don&#39;t have a character sheet.</li> <li>Your character has a name, a past that they shared with the other players, and hopes for the future.</li> <li>As the story unfolds, you will investigate and interrogate the world and interact with it in realistic ways. </li> <li>When you take an action, or linger in in-action, the Director may ask you to make check or save by flipping pennies!</li> </ul> <p>🪙 There is only one player&#39;s mechanic in this system!</p> <ul> <li>Each player starts with one penny. </li> <li>When the director (your Game Master) ask you make a save or check, they will give you a Difficulty Score (DS) than you need to meet or beat to succeed. Then they will ask you to flip your pennies (by clicking a button in Foundry VTT in our case).</li> <li>Heads count 1 and Tails count 0 toward your success. </li> <li>The difficulty score is variable, but the DS maximum is 5. </li> <li>If the number of heads meets or beats the DS, you succeed.</li> <li>If you fail the check or save, you will be given an additional penny that you must flip on your next check or save. </li> <li>You may accrue up to 10 pennies.</li> </ul> <p>🪙 With 9 or less pennies, failing a check can just mean that doom comes closer, not necessarily that the action didn’t work. </p> <ul> <li>You can break down that door, but the sound echoes…</li> <li>You can jump that gap, but they leave a small scrap of fabric on the cliff-side…</li> </ul> <p>🪙 With 10 pennies, failing a check means that it&#39;s the end for your character. They die, usually in a spectacularly horrific way. </p> <p>🪙 Success on a check or save moves the players closer to their stated or implied goals.</p>'
+      format: 1
+    sort: 0
+    ownership:
+      default: -1
+    flags: {}
+    _key: '!journal.pages!VV0ezsslj1ZG9qbc.zGAvggN7ohTw0QTx'
+  - _id: XnCDhnfsSvAWTNMx
+    name: Licence
+    type: text
+    title:
+      show: true
+      level: 1
+    text:
+      content: '<p>Penny Dreadful © 2026 by Daniel Fitzpatrick is licensed under CC BY-SA 4.0. To view a copy of this license, visit <a href="https://creativecommons.org/licenses/by-sa/4.0/">https://creativecommons.org/licenses/by-sa/4.0/</a></p> <p>Daniel Fitzpatrick on itch.io: <a href="https://baphelon.itch.io/">https://baphelon.itch.io/</a></p> <p>The Player-Facing Rules page is an adaptation of Penny Dreadful for play in Foundry VTT and is shared under the same licence.</p>'
+      format: 1
+    sort: 100000
+    ownership:
+      default: -1
+    flags: {}
+    _key: '!journal.pages!VV0ezsslj1ZG9qbc.XnCDhnfsSvAWTNMx'
+folder: null
+sort: 0
+ownership:
+  default: 0
+flags:
+  penny-dreadful:
+    journal: true
+_stats:
+  systemId: penny-dreadful
+  coreVersion: '14.365'
+_key: '!journal!VV0ezsslj1ZG9qbc'

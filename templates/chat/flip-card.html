@@ -1,0 +1,18 @@
+{{!-- A flip's chat card. The coins are drawn here because a message with its
+      own content does not get Foundry's roll block appended. --}}
+<div class="pd-flip-card pd-{{outcome}}">
+    <div class="pd-coins">
+        {{#each coins}}
+            {{#if heads}}
+                <span class="pd-coin heads" data-tooltip="{{localize 'PD.Chat.HeadsLabel'}}"><i class="fa-solid fa-circle"></i><i class="fa-solid fa-cent-sign"></i></span>
+            {{else}}
+                <span class="pd-coin tails" data-tooltip="{{localize 'PD.Chat.TailsLabel'}}"><i class="fa-regular fa-circle"></i></span>
+            {{/if}}
+        {{/each}}
+    </div>
+    <div class="pd-tally">{{tally}}</div>
+    <div class="pd-outcome">
+        <span class="pd-badge">{{badge}}</span>
+        {{#if detail}}<span class="pd-detail">{{detail}}</span>{{/if}}
+    </div>
+</div>

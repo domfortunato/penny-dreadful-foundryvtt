@@ -1,0 +1,86 @@
+# Based on Air Bladder's workflow of the same name, itself based on
+# https://github.com/League-of-Foundry-Developers/FoundryVTT-Module-Template
+name: Release Creation
+
+on:
+  # PRIMARY PATH: pushing a version tag (X.Y.Z) builds and publishes the release
+  # with system.json + system.zip. The tag is created on the Gitea side
+  # (`npm run release`, see RELEASE.md) and reaches GitHub via the mirror, so it
+  # is never pruned. There is deliberately NO `release: [published]` trigger: a
+  # release made in GitHub's UI creates a GitHub-only tag that the mirror prunes,
+  # silently demoting the release to a draft.
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  # Manual fallback: (re)build + attach assets to an existing tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to (re)build and attach system.json + system.zip to (e.g. 0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: npm ci
+
+      # Build first, gate second: the gates assert on the tree as it ships.
+      - run: npm run build:packs
+      - run: npm run check
+
+      - name: Substitute Manifest and Download Links For Versioned Ones
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const m = JSON.parse(fs.readFileSync("system.json", "utf8"));
+            m.version = process.env.RELEASE_TAG;
+            m.manifest = `https://github.com/${process.env.REPO}/releases/latest/download/system.json`;
+            m.download = `https://github.com/${process.env.REPO}/releases/download/${process.env.RELEASE_TAG}/system.zip`;
+            fs.writeFileSync("system.json", JSON.stringify(m, null, 2) + "\n");
+            console.log(`system.json: version ${m.version}, download ${m.download}`);
+          '
+
+      - run: zip -r ./system.zip README.md LICENSE.txt system.json css/ lang/ module/ packs/ templates/
+
+      # The release notes ride in the annotated tag (written by `npm run release`
+      # from CHANGELOG.md), so the release is created with its notes in the same
+      # call that attaches the assets.
+      - name: Read the release notes from the tag
+        run: |
+          git tag -l --format='%(contents:body)' "$RELEASE_TAG" > release-notes.md
+          if grep -q '[^[:space:]]' release-notes.md; then
+            echo "release notes: $(wc -l < release-notes.md) lines from the body of tag $RELEASE_TAG"
+          else
+            echo "release notes: tag $RELEASE_TAG carries none (the release body stays as it is)"
+          fi
+
+      - name: Update Release with Files
+        id: create_version_release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          omitNameDuringUpdate: true
+          bodyFile: release-notes.md
+          omitBodyDuringUpdate: true
+          draft: false
+          prerelease: false
+          omitPrereleaseDuringUpdate: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "./system.json, ./system.zip"
+          tag: ${{ env.RELEASE_TAG }}

@@ -1,0 +1,67 @@
+{
+  "id": "penny-dreadful",
+  "title": "Penny Dreadful",
+  "description": "A horror-movie game with one mechanic: flip your pennies. The game rules are by Daniel Fitzpatrick (CC BY-SA 4.0); this Foundry VTT system is an independent adaptation he is not involved in.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14.365",
+    "verified": "14.367"
+  },
+  "license": "LICENSE.txt",
+  "url": "https://github.com/domfortunato/penny-dreadful-foundryvtt",
+  "readme": "https://github.com/domfortunato/penny-dreadful-foundryvtt#readme",
+  "bugs": "https://github.com/domfortunato/penny-dreadful-foundryvtt/issues",
+  "changelog": "https://github.com/domfortunato/penny-dreadful-foundryvtt/releases",
+  "manifest": "https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.json",
+  "download": "https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.zip",
+  "authors": [
+    {
+      "name": "Dom Bosco",
+      "url": "https://github.com/domfortunato"
+    }
+  ],
+  "esmodules": [
+    "module/penny-dreadful.js"
+  ],
+  "styles": [
+    {
+      "src": "css/penny-dreadful.css"
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "character": {},
+      "npc": {}
+    }
+  },
+  "packs": [
+    {
+      "name": "rules",
+      "label": "PD.Pack.rules",
+      "type": "JournalEntry",
+      "system": "penny-dreadful"
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Penny Dreadful",
+      "sorting": "a",
+      "packs": [
+        "rules"
+      ]
+    }
+  ],
+  "flags": {
+    "hotReload": {
+      "extensions": ["css", "html", "json"],
+      "paths": ["css", "templates", "lang"]
+    }
+  }
+}

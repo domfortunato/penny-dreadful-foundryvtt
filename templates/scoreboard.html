@@ -1,0 +1,145 @@
+{{!--
+  The scoreboard. ONE ROOT ELEMENT: an ApplicationV2 part that renders more
+  than one top-level element throws and renders nothing.
+
+  Columns: name (+ player), ten penny slots, the eleventh for the dead, then
+  the row's actions. NPCs come after the characters under a labelled divider
+  (a `section` row); their hand is the NPC Penny Limit setting (5 to 10), so
+  they show that many slots and their actions cell spans the rest.
+  Director-only controls are inside {{#if ../isDirector}} and their handlers
+  check again; the server refuses a player's write to any row but their own.
+--}}
+<div class="pd-board">
+    <div class="pd-toolbar">
+        <button type="button" class="pd-icon" data-action="openRules"
+                data-tooltip="{{localize 'PD.Board.Rules'}}" aria-label="{{localize 'PD.Board.Rules'}}">
+            <i class="fa-solid fa-book-skull"></i>
+        </button>
+        <button type="button" class="pd-icon" data-action="openOdds"
+                data-tooltip="{{localize 'PD.Board.Odds'}}" aria-label="{{localize 'PD.Board.Odds'}}">
+            <i class="fa-solid fa-percent"></i>
+        </button>
+        {{#if isDirector}}
+            {{#if diceModule}}
+                <button type="button" class="pd-icon{{#if holdCoins}} on{{/if}}" data-action="holdCoins"
+                        data-tooltip="{{#if holdCoins}}{{localize 'PD.Board.HoldCoinsOn'}}{{else}}{{localize 'PD.Board.HoldCoins'}}{{/if}}"
+                        aria-label="{{localize 'PD.Board.HoldCoins'}}" aria-pressed="{{#if holdCoins}}true{{else}}false{{/if}}">
+                    <i class="fa-solid fa-thumbtack"></i>
+                </button>
+                {{#if holdCoins}}
+                    <button type="button" class="pd-icon" data-action="clearCoins"
+                            data-tooltip="{{localize 'PD.Board.ClearCoins'}}" aria-label="{{localize 'PD.Board.ClearCoins'}}">
+                        <i class="fa-solid fa-broom"></i>
+                    </button>
+                {{/if}}
+            {{/if}}
+            {{#if canSpotlight}}
+                <button type="button" class="pd-icon" data-action="nextSpotlight"
+                        data-tooltip="{{localize 'PD.Board.Next'}}" aria-label="{{localize 'PD.Board.Next'}}">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            {{/if}}
+            <button type="button" class="pd-icon" data-action="addNpc"
+                    data-tooltip="{{localize 'PD.Board.AddNpc'}}" aria-label="{{localize 'PD.Board.AddNpc'}}">
+                <i class="fa-solid fa-user-plus"></i>
+            </button>
+        {{/if}}
+        <span class="pd-zoom" data-tooltip="{{localize 'PD.Board.Zoom' percent=scalePercent}}">
+            <button type="button" class="pd-icon" data-action="zoomOut" {{#unless canZoomOut}}disabled{{/unless}}
+                    data-tooltip="{{localize 'PD.Board.ZoomOut'}}" aria-label="{{localize 'PD.Board.ZoomOut'}}">
+                <i class="fa-solid fa-compress"></i>
+            </button>
+            <button type="button" class="pd-icon" data-action="zoomIn" {{#unless canZoomIn}}disabled{{/unless}}
+                    data-tooltip="{{localize 'PD.Board.ZoomIn'}}" aria-label="{{localize 'PD.Board.ZoomIn'}}">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+        </span>
+    </div>
+    {{#if hasRows}}
+        <table class="pd-table">
+            <tbody>
+            {{#each rows}}
+            {{#if section}}
+                <tr class="pd-section"><td colspan="{{../columns}}">{{label}}</td></tr>
+            {{else}}
+                <tr class="pd-row{{#if spotlight}} spotlight{{/if}}{{#if dead}} dead{{/if}}{{#if pending}} pending{{/if}}"
+                    data-actor-id="{{id}}">
+                    <td class="pd-name">
+                        {{#if ../canSpotlight}}
+                            <button type="button" class="pd-spot{{#if spotlight}} on{{/if}}" data-action="spotlight"
+                                    data-tooltip="{{localize 'PD.Board.Spotlight'}}" aria-label="{{localize 'PD.Board.Spotlight'}}">
+                                <i class="fa-solid fa-star"></i>
+                            </button>
+                        {{else if spotlight}}
+                            <i class="pd-spot on fa-solid fa-star" data-tooltip="{{localize 'PD.Board.SpotlightNow'}}"></i>
+                        {{/if}}
+                        {{#if isOwner}}
+                            <button type="button" class="pd-name-btn" data-action="openSheet"
+                                    data-tooltip="{{localize 'PD.Board.OpenSheet'}}">{{name}}</button>
+                        {{else}}
+                            <span class="pd-name-text">{{name}}</span>
+                        {{/if}}
+                        {{#if playerName}}
+                            <span class="pd-player{{#if playerActive}} active{{/if}}"
+                                  data-tooltip="{{#if playerActive}}{{localize 'PD.Board.PlayerOnline' name=playerName}}{{else}}{{localize 'PD.Board.PlayerOffline' name=playerName}}{{/if}}">{{#unless playerSameAsName}}{{playerName}}{{/unless}}</span>
+                        {{/if}}
+                    </td>
+                    {{#each pennies}}
+                        <td class="pd-penny{{#if filled}} filled{{else}} empty{{/if}}">
+                            {{#if filled}}
+                                <span class="pd-coin" data-tooltip="{{localize 'PD.Board.Penny' n=n}}">
+                                    <i class="fa-solid fa-circle"></i><i class="fa-solid fa-cent-sign"></i>
+                                </span>
+                            {{else}}
+                                <i class="fa-regular fa-circle"></i>
+                            {{/if}}
+                        </td>
+                    {{/each}}
+                    <td class="pd-dead">
+                        {{#if dead}}<i class="fa-solid fa-skull" data-tooltip="{{localize 'PD.Board.Dead'}}"></i>{{/if}}
+                    </td>
+                    <td class="pd-actions" colspan="{{actionsSpan}}">
+                        {{#if canFlip}}
+                            <button type="button" class="pd-flip" data-action="flip">
+                                <i class="fa-solid fa-coins"></i> {{localize 'PD.Board.Flip' ds=ds}}
+                            </button>
+                        {{else if flipping}}
+                            <span class="pd-flipping"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'PD.Board.Flipping'}}</span>
+                        {{else if pending}}
+                            <span class="pd-pending" data-tooltip="{{localize 'PD.Board.PendingHint' chance=chance}}">{{localize 'PD.Board.Pending' ds=ds}}</span>
+                        {{/if}}
+                        {{#if ../isDirector}}
+                            <span class="pd-ds">
+                                {{#each dsOptions}}
+                                    <button type="button" class="pd-pill{{#if active}} active{{/if}}" data-action="issueChallenge"
+                                            data-ds="{{n}}" {{#if ../dead}}disabled{{/if}}
+                                            data-tooltip="{{#if active}}{{localize 'PD.Board.ClearChallenge' ds=n}}{{else}}{{localize 'PD.Board.Challenge' ds=n chance=chance}}{{/if}}">{{n}}</button>
+                                {{/each}}
+                            </span>
+                            <span class="pd-adjust">
+                                <button type="button" class="pd-icon" data-action="removePenny"
+                                        data-tooltip="{{localize 'PD.Board.RemovePenny'}}" aria-label="{{localize 'PD.Board.RemovePenny'}}">
+                                    <i class="fa-solid fa-minus"></i>
+                                </button>
+                                <button type="button" class="pd-icon" data-action="addPenny" {{#if atMax}}disabled{{/if}}
+                                        data-tooltip="{{localize 'PD.Board.AddPenny'}}" aria-label="{{localize 'PD.Board.AddPenny'}}">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                {{#if isNpc}}
+                                    <button type="button" class="pd-icon pd-remove" data-action="removeNpc"
+                                            data-tooltip="{{localize 'PD.Board.RemoveNpc'}}" aria-label="{{localize 'PD.Board.RemoveNpc'}}">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                {{/if}}
+                            </span>
+                        {{/if}}
+                    </td>
+                </tr>
+            {{/if}}
+            {{/each}}
+            </tbody>
+        </table>
+    {{else}}
+        <p class="pd-empty">{{localize 'PD.Board.Empty'}}</p>
+    {{/if}}
+</div>
