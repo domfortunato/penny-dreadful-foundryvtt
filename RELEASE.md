@@ -51,11 +51,10 @@ GitHub-made release into a draft in silence.
    git checkout dev && git merge master && git push origin dev
    ```
 
-7. Staging (from `c:\Users\domin\code\foundry`):
-
-   ```
-   scripts/deploy-system.sh 125 penny-dreadful --app foundry-test --yes
-   ```
+7. Test the release as a player gets it. The test app (http://192.168.30.125:30001)
+   installs Penny Dreadful from the manifest, not from git: Setup → Game Systems →
+   **Update** (or, on a fresh app, Install System with the manifest URL above).
+   Load a world and check the version in Setup reads X.Y.Z.
 
 ## Redoing a version
 

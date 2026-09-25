@@ -57,11 +57,14 @@ Staging is CT 125 "Misc" (`c:\Users\domin\code\foundry`, runbook
 | | Dev | Test |
 |---|---|---|
 | URL | http://192.168.30.125:30000 | http://192.168.30.125:30001 |
-| Branch | `dev` | `master` |
-| Deploy | `scripts/deploy-system.sh 125 penny-dreadful --yes` | `... --app foundry-test --yes` |
+| Source | git clone of `dev` | the published GitHub release |
+| Update | `scripts/deploy-system.sh 125 penny-dreadful --yes` | Setup → Game Systems → Update, after a release |
 
-Both are git clones owned by `foundry` with a read-only deploy key. Never run git
-as root there; never click "Update System" on a clone.
+Dev is a git clone owned by `foundry` with a read-only deploy key: never run
+git as root there, and never click "Update System" on it. Test is installed
+from the manifest, exactly as a player installs it, so it tests the release
+itself; `deploy-system.sh --app foundry-test` no longer applies to it. Its
+old clone was moved to `/home/foundry/penny-dreadful-test-git-clone.moved-2026-09-25`.
 
 Local inner loop: `C:\Users\domin\foundry\data\Data\systems\penny-dreadful` is a
 junction to this folder; the local 14.365 app runs on :30000.
