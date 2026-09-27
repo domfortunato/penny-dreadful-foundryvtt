@@ -10,7 +10,17 @@
         <div class="form-group">
             <label>{{localize 'PD.Sheet.Player'}}</label>
             <div class="form-fields">
-                <span class="pd-readonly">{{#if playerName}}{{playerName}}{{else}}{{localize 'PD.Sheet.NoPlayer'}}{{/if}}</span>
+                {{!-- The Director assigns the player here; ownership follows (assignPlayer). --}}
+                {{#if isDirector}}
+                    <select name="pdPlayer">
+                        <option value="">{{localize 'PD.Sheet.PlayerNone'}}</option>
+                        {{#each players}}
+                            <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                        {{/each}}
+                    </select>
+                {{else}}
+                    <span class="pd-readonly">{{#if playerName}}{{playerName}}{{else}}{{localize 'PD.Sheet.NoPlayer'}}{{/if}}</span>
+                {{/if}}
             </div>
         </div>
     {{/unless}}

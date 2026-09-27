@@ -140,13 +140,27 @@ junction to this folder; the local 14.365 app runs on :30000.
 - Board membership is `system.onBoard` for characters and NPCs alike
   (characters start on, NPCs off; `boardGroups` filters both). The Director
   adds rows with two toolbar buttons sharing one dialog (`addToBoard(type)`,
-  `templates/dialog/add-actor.html`) and removes any row with its ✕
-  (`removeFromBoard`: withdraw the chat ask, then clear challenge and
-  `onBoard` in one update). The sheet's on-the-board checkbox is
-  Director-only: membership is never the player's to change. The board's
-  size control is a `<select>` of presets (100–200% in tens, `SCALE_DEFAULT`
-  110%): a `change` cannot be an AppV2 action (those are click-only), so
-  `_onRender` wires the fresh element on every render.
+  `templates/dialog/add-actor.html`; person-plus is the character, the ghost
+  the NPC) and removes any row with its person-minus (`removeFromBoard`:
+  withdraw the chat ask, then clear challenge and `onBoard` in one update —
+  nothing is deleted, and the tooltip says so, because Dom read a red ✕ as
+  delete). The sheet's on-the-board checkbox is Director-only: membership is
+  never the player's to change. The board's size control is a `<select>` of
+  presets (100–200% in tens, `SCALE_DEFAULT` 110%): a `change` cannot be an
+  AppV2 action (those are click-only), so `_onRender` wires the fresh
+  element on every render.
+- A character's player is assigned on its sheet, not in Foundry's ownership
+  dialog: the Director's Player dropdown calls `assignPlayer` (players.js),
+  which makes the chosen user the row's one explicit non-GM OWNER (other
+  players' OWNER entries go; lower grants stay) and keeps Foundry's
+  `user.character` pointer in step both ways, so the core player list never
+  contradicts the board (that mismatch is how "it auto-assigned Player 2"
+  got reported: auto-create had built the character for that player days
+  earlier and it came back from off-board with its owner intact — nothing
+  ever assigns on create, which a live probe confirmed). The `pdPlayer`
+  field is not schema: `_processFormData` pulls it out before
+  DocumentSheetV2 validates the changes with `fallback: false`. The add
+  dialog names each candidate's player for the same reason.
 - A challenge is asked for in chat, not in a dialog: `module/request.js` posts
   a card whose stored content is only an empty action area; the Flip button
   (or "waiting" / "flipped" / "withdrawn" / "no longer pending") is drawn per

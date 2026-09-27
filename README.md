@@ -26,8 +26,10 @@ There are no character sheets. There is a scoreboard.
   pennies; an NPC is the Director's alone. Everyone else sees "waiting".
 - **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge;
   minus and plus adjust pennies; a star marks whose turn it is and a Next arrow
-  advances it; characters and NPCs can be taken off the board and added back
-  (or created by name) from the toolbar. NPCs sit in their own section under
+  advances it; characters and NPCs can be taken off the board (nothing is
+  deleted) and added back or created by name from the toolbar. Each
+  character's sheet has a Player dropdown that gives the row to a player —
+  one player can own several characters. NPCs sit in their own section under
   the characters with a slot for each penny they can hold.
 - **The flip**: the Director's request lands in chat as a card with a Flip
   button; the player flips from the card or from the board, and the pennies are

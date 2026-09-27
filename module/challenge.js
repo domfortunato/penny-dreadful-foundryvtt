@@ -74,7 +74,15 @@ const ADD_LABELS = {
 export const addToBoard = async (type) => {
   const labels = ADD_LABELS[type];
   if (!isDirector() || !labels) return;
-  const candidates = game.actors.filter((a) => a.type === type && !a.system.onBoard).sort(byName);
+  // A candidate names its player, so a returning character is no surprise;
+  // same convention as the board, which hides a player named like the row.
+  const candidates = game.actors
+    .filter((a) => a.type === type && !a.system.onBoard)
+    .sort(byName)
+    .map((a) => {
+      const player = a.ownerUser;
+      return { id: a.id, label: player && player.name !== a.name ? `${a.name} (${player.name})` : a.name };
+    });
   const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addActor, { candidates, labels });
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: labels.title, icon: "fa-solid fa-user-plus" },

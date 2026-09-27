@@ -17,6 +17,8 @@
  * an NPC sits in its own section, dies on a forced five-penny failure and is
  * removed; the Director takes a character off the board (its pending ask is
  * withdrawn) and puts it back through the add dialog, or creates one by name;
+ * the sheet's Player dropdown gives a character to a player and takes it
+ * back (ownership and Foundry's pointer follow, players see only text);
  * the size dropdown starts a fresh client at 110% and a pick resizes and
  * persists. Creates users Alice and
  * Bob if missing and resets Alice's row each run.
@@ -87,7 +89,7 @@ async function joinAs(page, name) {
 }
 
 const browser = await chromium.launch({ headless: true });
-const watchdog = setTimeout(async () => { console.error("  FAIL  probe exceeded 240s"); await browser.close().catch(() => {}); process.exit(1); }, 240000);
+const watchdog = setTimeout(async () => { console.error("  FAIL  probe exceeded 360s"); await browser.close().catch(() => {}); process.exit(1); }, 360000);
 watchdog.unref();
 
 try {
@@ -210,7 +212,9 @@ try {
   await gm.evaluate(async () => {
     const a = game.actors.find((x) => x.type === "character" && x.name === "Alice");
     if (a) await a.update({ "system.pennies": 1, "system.dead": false, "system.onBoard": true, "system.challenge": { ds: null, issuedBy: "", issuedAt: null } });
-    for (const n of game.actors.filter((x) => ["The Killer", "Smoke Extra"].includes(x.name))) await n.delete();
+    for (const n of game.actors.filter((x) => ["The Killer", "Smoke Extra", "Smoke Gone"].includes(x.name))) await n.delete();
+    const bob = game.users.getName("Bob");
+    if (bob?._source.character) await bob.update({ character: null });
   });
   await al.waitForTimeout(1500);
   const s2 = await al.evaluate(() => {
@@ -517,27 +521,96 @@ try {
   check(removed.card === "withdrawn", `the removed character's ask reads withdrawn (${removed.card})`);
   await al.waitForFunction((a) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`), aliceId, { timeout: 10000 })
     .then(() => ok("the removed row leaves the player's board too")).catch(() => fail("the removed row leaves the player's board too"));
-  // Back on through the add dialog.
-  await gm.click('#pd-scoreboard button[data-action="addCharacter"]');
-  await gm.waitForSelector('.pd-dialog select[name="actor"]', { timeout: 10000 });
-  check(await gm.evaluate((a) => [...document.querySelectorAll('.pd-dialog select[name="actor"] option')].some((o) => o.value === a), aliceId),
-    "the add dialog offers the off-board character");
-  await gm.selectOption('.pd-dialog select[name="actor"]', aliceId);
-  await gm.click('.pd-dialog button[data-action="add"]');
+  // Back on through the add dialog. The dialogs are driven through the DOM:
+  // a closing dialog animates out while the next opens, and Playwright's
+  // actionability waits can starve against the board re-rendering beside it.
+  const openAddDialog = async (page) => {
+    await page.waitForFunction(() => !document.querySelector(".pd-dialog"), null, { timeout: 10000 }).catch(() => {});
+    await page.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="addCharacter"]').click());
+    await page.waitForFunction(() => {
+      const d = [...document.querySelectorAll(".pd-dialog")].pop();
+      return !!d?.querySelector('input[name="newName"]');
+    }, null, { timeout: 10000 });
+  };
+  await openAddDialog(gm);
+  check(await gm.evaluate((a) => {
+    const d = [...document.querySelectorAll(".pd-dialog")].pop();
+    return [...d.querySelectorAll('select[name="actor"] option')].some((o) => o.value === a);
+  }, aliceId), "the add dialog offers the off-board character");
+  await gm.evaluate((a) => {
+    const d = [...document.querySelectorAll(".pd-dialog")].pop();
+    d.querySelector('select[name="actor"]').value = a;
+    d.querySelector('button[data-action="add"]').click();
+  }, aliceId);
   await gm.waitForSelector(`#pd-scoreboard tr[data-actor-id="${aliceId}"]`, { timeout: 10000 })
     .then(() => ok("the character is back on the board")).catch(() => fail("the character is back on the board"));
   // A brand-new character by name from the same dialog.
-  await gm.click('#pd-scoreboard button[data-action="addCharacter"]');
-  await gm.waitForSelector('.pd-dialog input[name="newName"]', { timeout: 10000 });
-  await gm.fill('.pd-dialog input[name="newName"]', "Smoke Extra");
-  await gm.click('.pd-dialog button[data-action="add"]');
-  await gm.waitForFunction(() => game.actors.getName("Smoke Extra")?.type === "character", null, { timeout: 10000 }).catch(() => {});
+  await openAddDialog(gm);
+  await gm.evaluate(() => {
+    const d = [...document.querySelectorAll(".pd-dialog")].pop();
+    d.querySelector('input[name="newName"]').value = "Smoke Extra";
+    d.querySelector('button[data-action="add"]').click();
+  });
+  await gm.waitForFunction(() => {
+    const a = game.actors.getName("Smoke Extra");
+    return a?.type === "character" && !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${a.id}"]`);
+  }, null, { timeout: 10000 }).catch(() => {});
   const extra = await gm.evaluate(() => {
     const a = game.actors.getName("Smoke Extra");
     return { type: a?.type, onBoard: a?.system.onBoard, row: !!a && !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${a.id}"]`) };
   });
   check(extra.type === "character" && extra.onBoard === true && extra.row, `a new character by name lands on the board (${JSON.stringify(extra)})`);
-  await gm.evaluate(async () => { await game.actors.getName("Smoke Extra")?.delete(); });
+  const extraId = await gm.evaluate(() => game.actors.getName("Smoke Extra").id);
+  check(await gm.evaluate((id) => !game.actors.get(id).ownerUser, extraId), "a new character belongs to no player");
+
+  // The sheet's Player dropdown assigns the row to a player; ownership and
+  // Foundry's primary-character pointer follow, and the board shows the name.
+  await gm.evaluate(async (id) => { await game.actors.get(id).sheet.render({ force: true }); }, extraId);
+  await gm.waitForSelector('.pd-sheet select[name="pdPlayer"]', { timeout: 10000 });
+  await gm.selectOption('.pd-sheet select[name="pdPlayer"]', { label: "Bob" });
+  await gm.waitForFunction((id) => game.actors.get(id).ownerUser?.name === "Bob", extraId, { timeout: 10000 })
+    .then(() => ok("the sheet dropdown made Bob the player")).catch(() => fail("the sheet dropdown made Bob the player"));
+  // The pointer and the row label land in their own writes; wait for each.
+  await gm.waitForFunction((id) => game.users.getName("Bob")._source.character === id, extraId, { timeout: 10000 })
+    .then(() => ok("Foundry's pointer followed the assignment")).catch(() => fail("Foundry's pointer followed the assignment"));
+  await gm.waitForFunction((id) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] .pd-player`)?.textContent.trim() === "Bob", extraId, { timeout: 10000 })
+    .then(() => ok("the board row shows Bob")).catch(() => fail("the board row shows Bob"));
+  // Off the board with a player, the add dialog names them.
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${extraId}"] button[data-action="removeFromBoard"]`);
+  await gm.waitForFunction((id) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"]`), extraId, { timeout: 10000 }).catch(() => {});
+  await openAddDialog(gm);
+  const offered2 = await gm.evaluate((id) => {
+    const d = [...document.querySelectorAll(".pd-dialog")].pop();
+    return [...d.querySelectorAll('select[name="actor"] option')].find((o) => o.value === id)?.textContent.trim();
+  }, extraId);
+  check(offered2 === "Smoke Extra (Bob)", `the add dialog names the character's player (${offered2})`);
+  await gm.evaluate(async () => {
+    for (const a of foundry.applications.instances.values()) if (a instanceof foundry.applications.api.DialogV2) await a.close();
+  });
+  await gm.waitForTimeout(400);
+  // Back to no player, then away.
+  await gm.selectOption('.pd-sheet select[name="pdPlayer"]', "");
+  await gm.waitForFunction((id) => !game.actors.get(id).ownerUser, extraId, { timeout: 10000 })
+    .then(() => ok('assigning "No player" removed Bob again')).catch(() => fail('assigning "No player" removed Bob again'));
+  await gm.waitForFunction(() => game.users.getName("Bob")._source.character === null, null, { timeout: 10000 })
+    .then(() => ok("Foundry's pointer was cleared with the player")).catch(() => fail("Foundry's pointer was cleared with the player"));
+  await gm.evaluate(async (id) => { await game.actors.get(id).sheet.close(); await game.actors.get(id).delete(); }, extraId);
+
+  // A player's own sheet shows the player as text, never a dropdown.
+  await al.evaluate(async (id) => { await game.actors.get(id).sheet.render({ force: true }); }, aliceId);
+  await al.waitForSelector(".pd-sheet", { timeout: 10000 });
+  check(await al.evaluate(() => !document.querySelector('.pd-sheet select[name="pdPlayer"]') && !!document.querySelector(".pd-sheet .pd-readonly")),
+    "a player's own sheet shows the player as text, not a dropdown");
+  await al.evaluate(async (id) => { await game.actors.get(id).sheet.close(); }, aliceId);
+
+  // The icons: people are characters, the ghost is the NPC, remove is person-minus.
+  const icons = await gm.evaluate(() => ({
+    addCharacter: document.querySelector('#pd-scoreboard button[data-action="addCharacter"] i')?.className,
+    addNpc: document.querySelector('#pd-scoreboard button[data-action="addNpc"] i')?.className,
+    remove: document.querySelector('#pd-scoreboard button[data-action="removeFromBoard"] i')?.className,
+  }));
+  check(/fa-user-plus/.test(icons.addCharacter) && /fa-ghost/.test(icons.addNpc) && /fa-user-minus/.test(icons.remove),
+    `people add and remove characters, the ghost adds NPCs (${JSON.stringify(icons)})`);
 
   // The size dropdown: 100%-200% presets, a fresh client's 110%, a pick that sticks.
   const zoom = await gm.evaluate(async () => {

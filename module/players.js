@@ -33,6 +33,40 @@ export const ensureCharacterFor = async (user) => {
   }
 };
 
+/**
+ * Make this character userId's, or nobody's (""). One player per row: any
+ * other player's explicit OWNER entry is removed; lower grants and the
+ * Director's own entry are left alone. Foundry's "primary character" pointer
+ * (`user.character`) follows, so the core player list agrees with the board:
+ * the new player gains it if they had none, and anyone whose pointer named
+ * this actor loses it. A player may own several characters; each row shows
+ * their name.
+ */
+export const assignPlayer = async (actor, userId) => {
+  if (!game.user.isGM || actor?.type !== "character") return;
+  const OWNER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+  const chosen = userId ? game.users.get(userId) : null;
+  if (userId && (!chosen || chosen.isGM)) return;
+  if ((actor.ownerUser?.id ?? null) === (chosen?.id ?? null)) return;
+  // The whole ownership object is replaced, the way core's own ownership
+  // dialog does it ({diff: false, recursive: false}): a partial update
+  // cannot remove an entry.
+  const ownership = foundry.utils.deepClone(actor._source.ownership);
+  for (const u of game.users) {
+    if (!u.isGM && u !== chosen && ownership[u.id] === OWNER) delete ownership[u.id];
+  }
+  if (chosen) ownership[chosen.id] = OWNER;
+  await actor.update({ ownership }, { diff: false, recursive: false });
+  for (const u of game.users) {
+    if (u.isGM) continue;
+    if (u === chosen) {
+      if (!u.character) await u.update({ character: actor.id });
+    } else if (u._source.character === actor.id) {
+      await u.update({ character: null });
+    }
+  }
+};
+
 export const registerPlayerHooks = () => {
   Hooks.on("userConnected", (user, active) => {
     if (active) ensureCharacterFor(user);

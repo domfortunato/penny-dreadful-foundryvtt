@@ -21,8 +21,8 @@
   "PD.Board.Penny": "Penny {n}",
   "PD.Board.PlayerOffline": "{name} (Offline)",
   "PD.Board.PlayerOnline": "{name} (Online)",
-  "PD.Board.RemoveCharacter": "Take this character off the board",
-  "PD.Board.RemoveNpc": "Take this NPC off the board",
+  "PD.Board.RemoveCharacter": "Take this character off the board (nothing is deleted)",
+  "PD.Board.RemoveNpc": "Take this NPC off the board (nothing is deleted)",
   "PD.Board.RemovePenny": "Remove a penny (revives a dead character)",
   "PD.Board.Rules": "Read the rules",
   "PD.Board.Spotlight": "Spotlight this row",
@@ -79,6 +79,7 @@
   "PD.Sheet.OnBoard": "On the scoreboard",
   "PD.Sheet.Pennies": "Pennies",
   "PD.Sheet.Player": "Player",
+  "PD.Sheet.PlayerNone": "No player",
   "TYPES.Actor.character": "Character",
   "TYPES.Actor.npc": "NPC"
 }
