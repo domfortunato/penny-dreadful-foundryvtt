@@ -140,15 +140,27 @@ junction to this folder; the local 14.365 app runs on :30000.
 - Board membership is `system.onBoard` for characters and NPCs alike
   (characters start on, NPCs off; `boardGroups` filters both). The Director
   adds rows with two toolbar buttons sharing one dialog (`addToBoard(type)`,
-  `templates/dialog/add-actor.html`; person-plus is the character, the ghost
-  the NPC) and removes any row with its person-minus (`removeFromBoard`:
+  `templates/dialog/add-actor.html`; person-plus is the PC, `fa-user-secret`
+  the NPC — Dom rejected the ghost) and removes any row with its
+  `fa-user-slash` (`removeFromBoard`: a DialogV2 confirm first, then
   withdraw the chat ask, then clear challenge and `onBoard` in one update —
-  nothing is deleted, and the tooltip says so, because Dom read a red ✕ as
-  delete). The sheet's on-the-board checkbox is Director-only: membership is
-  never the player's to change. The board's size control is a `<select>` of
-  presets (100–200% in tens, `SCALE_DEFAULT` 110%): a `change` cannot be an
-  AppV2 action (those are click-only), so `_onRender` wires the fresh
-  element on every render.
+  nothing is deleted, and the tooltip and dialog say so, because Dom read a
+  red ✕ as delete and a bare button as too easy to hit). The sheet's
+  on-the-board checkbox is Director-only: membership is never the player's
+  to change. The board's size control is a `<select>` of presets (100–200%
+  in tens, `SCALE_DEFAULT` 110%, a magnifier as its label): a `change`
+  cannot be an AppV2 action (those are click-only), so `_onRender` wires
+  the fresh element on every render. The row's name is an Edit button only
+  where `canFlipFor` says the row is yours — `isOwner` would leak it to a
+  default grant, and to players on NPC rows.
+- The new-one-shot tool (`startNewOneShot` in director.js, the clapperboard)
+  resets a world Dom reuses between one-shots: one confirm, then delete
+  every character, clear the chat with `ChatMessage.deleteDocuments([],
+  {deleteAll: true})` (core's `messages.flush()` would stack a second
+  confirm of its own), bench on-board NPCs (an NPC is the Director's prep,
+  never deleted), `setSpotlight("")`, then `ensureCharacterFor` each active
+  user so fresh rows appear at once. Off-board actors live in the Actors
+  tab; that is where "nothing is deleted" points.
 - A character's player is assigned on its sheet, not in Foundry's ownership
   dialog: the Director's Player dropdown calls `assignPlayer` (players.js),
   which makes the chosen user the row's one explicit non-GM OWNER (other

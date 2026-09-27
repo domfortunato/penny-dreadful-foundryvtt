@@ -110,9 +110,22 @@ export const addToBoard = async (type) => {
   if (actor) await actor.update({ "system.onBoard": true });
 };
 
-/** Take a row off the board, character or NPC; its pending challenge is withdrawn with it. */
+/**
+ * Take a row off the board, character or NPC; its pending challenge is
+ * withdrawn with it. Guarded by a confirm — the button is one click among
+ * many on the row — and the dialog says the actor is kept, because a red
+ * remove control reads as delete.
+ */
 export const removeFromBoard = async (actor) => {
   if (!isDirector() || !actor) return;
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: t("PD.Dialog.RemoveTitle", { name: actor.name }), icon: "fa-solid fa-user-slash" },
+    classes: ["penny-dreadful", "pd-dialog"],
+    content: `<p>${t("PD.Dialog.RemoveBody", { name: actor.name })}</p>`,
+    rejectClose: false,
+    renderOptions: boardWindowOptions(),
+  });
+  if (confirmed !== true) return;
   await withdrawRequests(actor);
   await actor.update({ "system.onBoard": false, "system.challenge": CLEARED });
 };

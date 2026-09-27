@@ -6,10 +6,12 @@ import { rerenderScoreboard } from "./scoreboard.js";
 const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
 
 /**
- * Who may flip a row's pennies: the Director, and the row's own player (its
- * explicit owner, `ownerUser`). Nobody flips for another player, even with
- * owner rights on their actor, and an NPC is the Director's alone. The board's
- * Flip button, the chat card's and `flip` itself all ask this.
+ * Whose row is this: the Director, and the row's own player (its explicit
+ * owner, `ownerUser`). Nobody flips for another player, even with owner
+ * rights on their actor, and an NPC is the Director's alone. The board's
+ * Flip button, the chat card's and `flip` itself all ask this — and so does
+ * the row's name/Edit button, which is the same question, so it stays one
+ * rule rather than growing a twin.
  */
 export const canFlipFor = (actor, user = game.user) =>
   !!actor && (user.isGM || actor.ownerUser?.id === user.id);

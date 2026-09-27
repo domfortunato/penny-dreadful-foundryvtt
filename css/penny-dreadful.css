@@ -104,8 +104,16 @@
 
 .pd-zoom {
     display: inline-flex;
+    align-items: center;
+    gap: calc(3 * var(--pd-u));
     margin-left: auto;
     padding-left: calc(8 * var(--pd-u));
+}
+
+/* The magnifier that labels the size dropdown. */
+.pd-scoreboard .pd-zoom-icon {
+    color: var(--pd-copper-hi);
+    font-size: calc(11 * var(--pd-u));
 }
 
 /* The size dropdown, dressed like the toolbar's buttons and sized in the

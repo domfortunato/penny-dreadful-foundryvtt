@@ -16,11 +16,13 @@
  * the board follows; a forced ten-penny failure marks death; minus revives;
  * an NPC sits in its own section, dies on a forced five-penny failure and is
  * removed; the Director takes a character off the board (its pending ask is
- * withdrawn) and puts it back through the add dialog, or creates one by name;
+ * withdrawn behind a confirm guard) and puts it back through the add dialog,
+ * or creates one by name;
  * the sheet's Player dropdown gives a character to a player and takes it
  * back (ownership and Foundry's pointer follow, players see only text);
  * the size dropdown starts a fresh client at 110% and a pick resizes and
- * persists. Creates users Alice and
+ * persists; the new-one-shot tool deletes every PC, clears the chat and
+ * rebuilds rows for connected players. Creates users Alice and
  * Bob if missing and resets Alice's row each run.
  *
  * Playwright is not a dependency of this repo. The script resolves it from
@@ -244,10 +246,17 @@ try {
     ui.sidebar.expand();
     ui.sidebar.changeTab("chat", "primary");
     await new Promise((r) => setTimeout(r, 800));
-    const log = document.querySelector("#chat .chat-log")?.getBoundingClientRect();
-    return { body: getComputedStyle(document.body).display, logHeight: Math.round(log?.height ?? 0) };
+    // The log may be legitimately EMPTY (the one-shot tool wipes it), so what
+    // is measured is the chat tab's box and the log being displayed, not the
+    // height of its contents.
+    const log = document.querySelector("#chat .chat-log");
+    return {
+      body: getComputedStyle(document.body).display,
+      logShown: !!log && getComputedStyle(log).display !== "none",
+      chatHeight: Math.round(document.querySelector("#chat")?.getBoundingClientRect().height ?? 0),
+    };
   });
-  check(chat.body === "flex" && chat.logHeight > 100, `Alice can see the chat log (${JSON.stringify(chat)})`);
+  check(chat.body === "flex" && chat.logShown && chat.chatHeight > 100, `Alice can see the chat log (${JSON.stringify(chat)})`);
   const names = await al.evaluate(() => {
     const scale = Number(game.settings.get("penny-dreadful", "scoreboardScale")) || 1;
     const own = document.querySelector("#pd-scoreboard .pd-name-btn");
@@ -465,10 +474,12 @@ try {
   const other = await al.evaluate((id) => ({
     owner: game.actors.get(id).isOwner,
     boardFlip: !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button[data-action="flip"]`),
+    nameBtn: !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button.pd-name-btn`),
     card: (() => { const c = [...document.querySelectorAll("#chat .pd-request-card")].pop(); return c ? { button: !!c.querySelector("button.pd-request-flip"), text: c.textContent.trim() } : null; })(),
   }), npcId);
   check(other.owner && !other.boardFlip && other.card && !other.card.button && /Director/.test(other.card.text),
     `a player with owner rights cannot flip an NPC (${JSON.stringify(other)})`);
+  check(!other.nameBtn, "a player with owner rights still gets no Edit button on an NPC row");
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "ownership.default": CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }); }, npcId);
   await gm.waitForTimeout(500);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${npcId}"] button[data-action="flip"]`);
@@ -502,7 +513,15 @@ try {
     await gm.click('#pd-scoreboard button[data-action="holdCoins"]');
     await gm.waitForFunction(() => game.settings.get("penny-dreadful", "holdCoins") === false, null, { timeout: 10000 }).catch(() => fail("hold toggle did not clear"));
   }
-  await gm.click(`#pd-scoreboard tr[data-actor-id="${npcId}"] button[data-action="removeFromBoard"]`);
+  // Removal is guarded by a confirm dialog; this clicks the row's button and
+  // confirms, DOM-driven for the same reason as openAddDialog below.
+  const confirmRemove = async (page, actorId) => {
+    await page.waitForFunction(() => !document.querySelector(".pd-dialog"), null, { timeout: 10000 }).catch(() => {});
+    await page.evaluate((id) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button[data-action="removeFromBoard"]`).click(), actorId);
+    await page.waitForFunction(() => !!([...document.querySelectorAll(".pd-dialog")].pop()?.querySelector('button[data-action="yes"]')), null, { timeout: 10000 });
+    await page.evaluate(() => { [...document.querySelectorAll(".pd-dialog")].pop().querySelector('button[data-action="yes"]').click(); });
+  };
+  await confirmRemove(gm, npcId);
   await gm.waitForTimeout(600);
   check(await gm.evaluate((id) => !game.actors.get(id).system.onBoard, npcId), "NPC removed from the board");
 
@@ -510,7 +529,14 @@ try {
   // its pending ask is withdrawn, and the add dialog offers it back.
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="1"]`);
   await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === 1, aliceId, { timeout: 10000 }).catch(() => {});
-  await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="removeFromBoard"]`);
+  // Cancelling the guard leaves the row alone.
+  await gm.evaluate((id) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button[data-action="removeFromBoard"]`).click(), aliceId);
+  await gm.waitForFunction(() => !!([...document.querySelectorAll(".pd-dialog")].pop()?.querySelector('button[data-action="no"]')), null, { timeout: 10000 });
+  await gm.evaluate(() => { [...document.querySelectorAll(".pd-dialog")].pop().querySelector('button[data-action="no"]').click(); });
+  await gm.waitForTimeout(600);
+  check(await gm.evaluate((id) => !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"]`) && game.actors.get(id).system.onBoard === true, aliceId),
+    "cancelling the remove guard leaves the row on the board");
+  await confirmRemove(gm, aliceId);
   await gm.waitForFunction((a) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`), aliceId, { timeout: 10000 }).catch(() => {});
   const removed = await gm.evaluate((a) => ({
     row: !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`),
@@ -576,7 +602,7 @@ try {
   await gm.waitForFunction((id) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] .pd-player`)?.textContent.trim() === "Bob", extraId, { timeout: 10000 })
     .then(() => ok("the board row shows Bob")).catch(() => fail("the board row shows Bob"));
   // Off the board with a player, the add dialog names them.
-  await gm.click(`#pd-scoreboard tr[data-actor-id="${extraId}"] button[data-action="removeFromBoard"]`);
+  await confirmRemove(gm, extraId);
   await gm.waitForFunction((id) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"]`), extraId, { timeout: 10000 }).catch(() => {});
   await openAddDialog(gm);
   const offered2 = await gm.evaluate((id) => {
@@ -603,14 +629,20 @@ try {
     "a player's own sheet shows the player as text, not a dropdown");
   await al.evaluate(async (id) => { await game.actors.get(id).sheet.close(); }, aliceId);
 
-  // The icons: people are characters, the ghost is the NPC, remove is person-minus.
+  // The icons: person-plus adds a PC, the stranger adds an NPC, a slashed
+  // person removes; the name button offers Edit to whoever the row belongs to.
   const icons = await gm.evaluate(() => ({
     addCharacter: document.querySelector('#pd-scoreboard button[data-action="addCharacter"] i')?.className,
     addNpc: document.querySelector('#pd-scoreboard button[data-action="addNpc"] i')?.className,
     remove: document.querySelector('#pd-scoreboard button[data-action="removeFromBoard"] i')?.className,
+    oneShot: document.querySelector('#pd-scoreboard button[data-action="newOneShot"] i')?.className,
+    zoomIcon: !!document.querySelector("#pd-scoreboard .pd-zoom .pd-zoom-icon"),
   }));
-  check(/fa-user-plus/.test(icons.addCharacter) && /fa-ghost/.test(icons.addNpc) && /fa-user-minus/.test(icons.remove),
-    `people add and remove characters, the ghost adds NPCs (${JSON.stringify(icons)})`);
+  check(/fa-user-plus/.test(icons.addCharacter) && /fa-user-secret/.test(icons.addNpc) && /fa-user-slash/.test(icons.remove),
+    `person-plus adds a PC, the stranger an NPC, a slashed person removes (${JSON.stringify(icons)})`);
+  check(/fa-clapperboard/.test(icons.oneShot) && icons.zoomIcon, "the one-shot clapperboard and the size magnifier are on the toolbar");
+  check(await al.evaluate(() => document.querySelector("#pd-scoreboard .pd-name-btn")?.dataset.tooltip === "Edit"),
+    'the name button\'s tooltip reads "Edit"');
 
   // The size dropdown: 100%-200% presets, a fresh client's 110%, a pick that sticks.
   const zoom = await gm.evaluate(async () => {
@@ -654,6 +686,37 @@ try {
   check(gone.cards === 2 && gone.firstState === "flipped" && gone.firstText === "Smoke Gone flipped", `a deleted row's old request still names it (${JSON.stringify(gone)})`);
   check(gone.lastState === "ended" && !gone.button && gone.flips === 1, `a deleted row's pending request offers no Flip (${JSON.stringify(gone)})`);
   await gm.screenshot({ path: `${OUT}/gm-4.png` });
+
+  // A new one-shot: one confirm, then every PC is gone, the chat is empty,
+  // the spotlight is out, NPC actors are kept off the board, and connected
+  // players get fresh rows at once. Last, because it wipes the chat.
+  const npcActorsBefore = await gm.evaluate(() => game.actors.filter((a) => a.type === "npc").length);
+  await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="newOneShot"]').click());
+  await gm.waitForFunction(() => !!([...document.querySelectorAll(".pd-dialog")].pop()?.querySelector('button[data-action="yes"]')), null, { timeout: 10000 });
+  await gm.evaluate(() => { [...document.querySelectorAll(".pd-dialog")].pop().querySelector('button[data-action="yes"]').click(); });
+  // Settled means: chat empty, the fresh row created AND rendered, and the
+  // spotlight's end state "" (the delete-advance race may write in between).
+  // A long window: this rig can lag a two-client run by tens of seconds.
+  await gm.waitForFunction(() => game.messages.size === 0
+    && game.actors.some((a) => a.type === "character" && a.name === "Alice")
+    && game.settings.get("penny-dreadful", "spotlightActorId") === ""
+    && document.querySelectorAll("#pd-scoreboard tr.pd-row").length === 1, null, { timeout: 60000 })
+    .then(() => ok("the one-shot reset settled")).catch(() => fail("the one-shot reset settled"));
+  const reset = await gm.evaluate((oldId) => ({
+    messages: game.messages.size,
+    oldAlice: !!game.actors.get(oldId),
+    characters: game.actors.filter((a) => a.type === "character").map((a) => a.name),
+    npcActors: game.actors.filter((a) => a.type === "npc").length,
+    npcOnBoard: game.actors.some((a) => a.type === "npc" && a.system.onBoard),
+    spotlight: game.settings.get("penny-dreadful", "spotlightActorId"),
+    rows: [...document.querySelectorAll("#pd-scoreboard tr.pd-row")].length,
+  }), aliceId);
+  console.log("one-shot reset:", JSON.stringify(reset));
+  check(reset.messages === 0 && !reset.oldAlice && reset.spotlight === "",
+    `the one-shot reset cleared the chat, the PCs and the spotlight (${JSON.stringify(reset)})`);
+  check(reset.characters.length === 1 && reset.characters[0] === "Alice" && reset.rows === 1,
+    `a fresh row was created for the connected player (${reset.characters.join(",")})`);
+  check(reset.npcActors === npcActorsBefore && !reset.npcOnBoard, "NPC actors are kept, off the board");
 
   /* ------------------------------------------------------------- report */
   const errors = [...gmErrors, ...alErrors];

@@ -45,11 +45,16 @@
             </button>
             <button type="button" class="pd-icon" data-action="addNpc"
                     data-tooltip="{{localize 'PD.Board.AddNpc'}}" aria-label="{{localize 'PD.Board.AddNpc'}}">
-                <i class="fa-solid fa-ghost"></i>
+                <i class="fa-solid fa-user-secret"></i>
+            </button>
+            <button type="button" class="pd-icon" data-action="newOneShot"
+                    data-tooltip="{{localize 'PD.Board.NewOneShot'}}" aria-label="{{localize 'PD.Board.NewOneShot'}}">
+                <i class="fa-solid fa-clapperboard"></i>
             </button>
         {{/if}}
-        <span class="pd-zoom">
-            <select class="pd-zoom-select" data-tooltip="{{localize 'PD.Board.Zoom'}}" aria-label="{{localize 'PD.Board.Zoom'}}">
+        <span class="pd-zoom" data-tooltip="{{localize 'PD.Board.Zoom'}}">
+            <i class="pd-zoom-icon fa-solid fa-magnifying-glass"></i>
+            <select class="pd-zoom-select" aria-label="{{localize 'PD.Board.Zoom'}}">
                 {{#each scaleOptions}}
                     <option value="{{percent}}" {{#if selected}}selected{{/if}}>{{percent}}%</option>
                 {{/each}}
@@ -74,9 +79,9 @@
                         {{else if spotlight}}
                             <i class="pd-spot on fa-solid fa-star" data-tooltip="{{localize 'PD.Board.SpotlightNow'}}"></i>
                         {{/if}}
-                        {{#if isOwner}}
+                        {{#if canEdit}}
                             <button type="button" class="pd-name-btn" data-action="openSheet"
-                                    data-tooltip="{{localize 'PD.Board.OpenSheet'}}">{{name}}</button>
+                                    data-tooltip="{{localize 'PD.Board.Edit'}}">{{name}}</button>
                         {{else}}
                             <span class="pd-name-text">{{name}}</span>
                         {{/if}}
@@ -129,7 +134,7 @@
                                 <button type="button" class="pd-icon pd-remove" data-action="removeFromBoard"
                                         data-tooltip="{{#if isNpc}}{{localize 'PD.Board.RemoveNpc'}}{{else}}{{localize 'PD.Board.RemoveCharacter'}}{{/if}}"
                                         aria-label="{{#if isNpc}}{{localize 'PD.Board.RemoveNpc'}}{{else}}{{localize 'PD.Board.RemoveCharacter'}}{{/if}}">
-                                    <i class="fa-solid fa-user-minus"></i>
+                                    <i class="fa-solid fa-user-slash"></i>
                                 </button>
                             </span>
                         {{/if}}

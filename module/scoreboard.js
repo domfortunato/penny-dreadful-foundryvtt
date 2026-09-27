@@ -15,6 +15,7 @@ import { clearCoinsEverywhere, coinsHeld, diceModuleAvailable, toggleHoldCoins }
 
 import { chanceOfSuccess, percent } from "./odds.js";
 import { openOdds, openRules } from "./rules.js";
+import { startNewOneShot } from "./director.js";
 import { getSpotlight, nextSpotlight, setSpotlight } from "./spotlight.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -61,6 +62,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       addCharacter: PDScoreboard.#onAddCharacter,
       addNpc: PDScoreboard.#onAddNpc,
       removeFromBoard: PDScoreboard.#onRemoveFromBoard,
+      newOneShot: PDScoreboard.#onNewOneShot,
       openSheet: PDScoreboard.#onOpenSheet,
     },
   };
@@ -201,7 +203,10 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     const sys = actor.system;
     const ds = sys.challenge.ds;
     const owner = actor.ownerUser;
-    const isOwner = actor.isOwner;
+    // The name is an Edit button only for whoever the row belongs to: the
+    // one rule, canFlipFor. `isOwner` would leak the button to anyone with
+    // owner rights (a default grant), and to players on NPC rows.
+    const canEdit = canFlipFor(actor);
     const flipping = isFlipping(actor.id);
     return {
       id: actor.id,
@@ -220,8 +225,8 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       pending: ds !== null,
       // The odds of the pending challenge, and of each DS the Director could ask for.
       chance: ds !== null ? percent(chanceOfSuccess(sys.pennies, ds), game.i18n.lang) : null,
-      isOwner,
-      canFlip: ds !== null && canFlipFor(actor) && !sys.dead && !flipping,
+      canEdit,
+      canFlip: ds !== null && canEdit && !sys.dead && !flipping,
       flipping,
       spotlight: actor.id === spotlightId,
       dsOptions: Array.from({ length: MAX_DS }, (_, i) => ({
@@ -291,9 +296,13 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     if (actor) await removeFromBoard(actor);
   }
 
+  static async #onNewOneShot() {
+    await startNewOneShot();
+  }
+
   static #onOpenSheet(event, target) {
     const actor = actorFrom(target);
-    if (actor?.isOwner) renderFromBoard(actor.sheet);
+    if (canFlipFor(actor)) renderFromBoard(actor.sheet);
   }
 }
 
