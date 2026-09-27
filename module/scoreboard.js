@@ -172,8 +172,12 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     const spotlightId = getSpotlight();
     const isDirector = game.user.isGM;
     const { characters, npcs } = boardGroups();
-    const rows = characters.map((actor) => this.#row(actor, spotlightId));
-    // NPCs are their own section under the characters, behind a labelled divider.
+    // Two labelled sections: the PCs, then the NPCs beneath their divider.
+    const rows = [];
+    if (characters.length) {
+      rows.push({ section: true, id: "pcs", label: t("PD.Board.Pcs") });
+      for (const actor of characters) rows.push(this.#row(actor, spotlightId));
+    }
     if (npcs.length) {
       rows.push({ section: true, id: "npcs", label: t("PD.Board.Npcs") });
       for (const actor of npcs) rows.push(this.#row(actor, spotlightId));

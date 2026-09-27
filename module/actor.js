@@ -72,3 +72,23 @@ export const boardActors = () => {
   const { characters, npcs } = boardGroups();
   return [...characters, ...npcs];
 };
+
+/**
+ * The Actors tab tells PCs from NPCs: every entry gets its type's tag,
+ * "(PC-PD)" or "(NPC-PD)". Pure render decoration, redrawn by the hook on
+ * every render of the tab (popped out included) — the stored name never
+ * carries it, so the board, the chat cards and the dialogs stay clean.
+ */
+export const registerDirectoryHooks = () => {
+  Hooks.on("renderActorDirectory", (app, html) => {
+    for (const li of html.querySelectorAll("li.directory-item.entry[data-entry-id]")) {
+      const actor = game.actors.get(li.dataset.entryId);
+      const name = li.querySelector(".entry-name");
+      if (!actor || !name || name.querySelector(".pd-type-tag")) continue;
+      const tag = document.createElement("span");
+      tag.className = "pd-type-tag";
+      tag.textContent = t(actor.type === "npc" ? "PD.Directory.NpcTag" : "PD.Directory.PcTag");
+      name.append(" ", tag);
+    }
+  });
+};

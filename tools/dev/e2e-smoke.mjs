@@ -407,13 +407,31 @@ try {
   // NPCs sit in their own section under the characters and hold five pennies at most.
   const s5 = await gm.evaluate((id) => {
     const rows = [...document.querySelectorAll("#pd-scoreboard tbody tr")];
-    const section = rows.findIndex((r) => r.classList.contains("pd-section"));
+    const sections = rows.flatMap((r, i) => (r.classList.contains("pd-section") ? [{ i, label: r.textContent.trim() }] : []));
     const npc = rows.findIndex((r) => r.dataset.actorId === id);
     const alice = rows.findIndex((r) => r.classList.contains("pd-row") && r.textContent.includes("Alice"));
-    return { section, npc, alice, slots: rows[npc]?.querySelectorAll("td.pd-penny").length, max: game.actors.get(id).system.maxPennies };
+    return { sections, npc, alice, slots: rows[npc]?.querySelectorAll("td.pd-penny").length, max: game.actors.get(id).system.maxPennies };
   }, npcId);
-  check(s5.section >= 0 && s5.alice < s5.section && s5.section < s5.npc, "NPC row sits below a section divider under the characters");
+  check(s5.sections.length === 2 && s5.sections[0].label === "PCs" && s5.sections[1].label === "NPCs"
+    && s5.sections[0].i < s5.alice && s5.alice < s5.sections[1].i && s5.sections[1].i < s5.npc,
+    `PCs and NPCs sit under their own dividers (${JSON.stringify({ sections: s5.sections, alice: s5.alice, npc: s5.npc })})`);
   check(s5.slots === 5 && s5.max === 5, `NPC row shows ${s5.slots} penny slots`);
+  // The Actors tab tags every entry with its type; the stored name stays clean.
+  const tags = await gm.evaluate(async () => {
+    ui.sidebar.expand();
+    ui.sidebar.changeTab("actors", "primary");
+    await new Promise((r) => setTimeout(r, 800));
+    const names = [...document.querySelectorAll("#actors li.directory-item.entry")]
+      .map((li) => li.querySelector(".entry-name")?.textContent.replace(/\s+/g, " ").trim());
+    ui.sidebar.changeTab("chat", "primary");
+    return {
+      alice: names.find((n) => n?.startsWith("Alice")),
+      killer: names.find((n) => n?.startsWith("The Killer")),
+      storedName: game.actors.getName("The Killer")?.name,
+    };
+  });
+  check(tags.alice?.endsWith("(PC-PD)") && tags.killer?.endsWith("(NPC-PD)") && tags.storedName === "The Killer",
+    `the Actors tab tags PCs and NPCs, names stay clean (${JSON.stringify(tags)})`);
   const sizes = await al.evaluate(() => ({
     own: parseFloat(getComputedStyle(document.querySelector("#pd-scoreboard .pd-name-btn")).fontSize),
     npc: parseFloat(getComputedStyle(document.querySelector("#pd-scoreboard .pd-name-text")).fontSize),

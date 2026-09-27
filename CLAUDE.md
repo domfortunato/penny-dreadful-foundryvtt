@@ -153,6 +153,14 @@ junction to this folder; the local 14.365 app runs on :30000.
   the fresh element on every render. The row's name is an Edit button only
   where `canFlipFor` says the row is yours — `isOwner` would leak it to a
   default grant, and to players on NPC rows.
+- The Actors tab shows every actor's type as a render-time tag, "(PC-PD)" /
+  "(NPC-PD)" (`registerDirectoryHooks` in actor.js, class `pd-type-tag`,
+  drawn on `renderActorDirectory`): decoration only, never written into the
+  name, so the board, chat cards and dialogs stay clean. On the board the
+  rows sit under their own PCs / NPCs dividers. The remove confirm's title
+  is per type ("Remove PC from board?"), its body is future tense with the
+  name, and its buttons are Remove / Cancel — core's confirm already makes
+  the no-button the default, so Enter never removes.
 - The new-one-shot tool (`startNewOneShot` in director.js, the clapperboard)
   resets a world Dom reuses between one-shots: one confirm, then delete
   every character, clear the chat with `ChatMessage.deleteDocuments([],

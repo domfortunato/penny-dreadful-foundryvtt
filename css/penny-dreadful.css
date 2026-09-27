@@ -116,6 +116,15 @@
     font-size: calc(11 * var(--pd-u));
 }
 
+/* The Actors tab's type tag: "(PC-PD)" / "(NPC-PD)", drawn at render time
+   by registerDirectoryHooks, never stored in the name. Not in the board's
+   --pd-u units: the sidebar is not the board. */
+.pd-type-tag {
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-left: 4px;
+}
+
 /* The size dropdown, dressed like the toolbar's buttons and sized in the
    board's own unit, so it grows along with what it resizes. */
 .pd-scoreboard select.pd-zoom-select {

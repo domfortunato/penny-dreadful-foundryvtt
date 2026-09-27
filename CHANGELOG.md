@@ -11,7 +11,8 @@ body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 - The Director can take characters off the board and put them back: every row now has a remove button, and the toolbar gains an Add-a-character button beside Add-an-NPC (pick an off-board actor, or type a name to create one). A removed row's pending ask is withdrawn, and its return is one click. Nothing is ever deleted, and the tooltips say so
 - The character sheet's Player line is now a dropdown for the Director: pick a player (or "No player") and the row is theirs — ownership moves, the board shows their name, and Foundry's own character assignment follows. One player can own several characters. A new character starts with no player
 - The add dialog names the player attached to an off-board character, e.g. "Victor (Player2)", so a returning row is no surprise
-- Taking a row off the board asks first, and the dialog says the actor is kept in the Actors tab
+- Taking a row off the board asks first: "Remove PC from board?" (or NPC), a body that says the actor will stay in the Actors tab, and Remove/Cancel buttons with Cancel as the default
+- The board's rows sit under their own PCs and NPCs headers, and the Actors tab labels every actor (PC-PD) or (NPC-PD) — a display label only, the name itself stays clean
 - New one-shot: a clapperboard on the board resets the world for the next session — one confirm, then every PC is deleted, the chat log is cleared, NPCs leave the board but are kept, and fresh characters are created for connected players
 - The board's icons say what they do: person-plus adds a PC, a slashed person takes a row off, the stranger in the trench coat adds an NPC, and a magnifier labels the size dropdown
 - A row's name reads "Edit" on hover and is a button only for the Director and the row's own player; other players (and every player on an NPC row) see plain text

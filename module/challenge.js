@@ -113,15 +113,23 @@ export const addToBoard = async (type) => {
 /**
  * Take a row off the board, character or NPC; its pending challenge is
  * withdrawn with it. Guarded by a confirm — the button is one click among
- * many on the row — and the dialog says the actor is kept, because a red
- * remove control reads as delete.
+ * many on the row — whose body speaks in the future tense (a choice, not a
+ * done deal, on Dom's reading of the first draft) and says the actor is
+ * kept, because a red remove control reads as delete. The buttons are
+ * Remove and Cancel, and core's confirm makes the no-button the default,
+ * so Enter never removes.
  */
 export const removeFromBoard = async (actor) => {
   if (!isDirector() || !actor) return;
   const confirmed = await foundry.applications.api.DialogV2.confirm({
-    window: { title: t("PD.Dialog.RemoveTitle", { name: actor.name }), icon: "fa-solid fa-user-slash" },
+    window: {
+      title: actor.type === "npc" ? "PD.Dialog.RemoveNpcTitle" : "PD.Dialog.RemovePcTitle",
+      icon: "fa-solid fa-user-slash",
+    },
     classes: ["penny-dreadful", "pd-dialog"],
     content: `<p>${t("PD.Dialog.RemoveBody", { name: actor.name })}</p>`,
+    yes: { label: "PD.Dialog.Remove", icon: "fa-solid fa-user-slash" },
+    no: { label: "PD.Dialog.Cancel" },
     rejectClose: false,
     renderOptions: boardWindowOptions(),
   });

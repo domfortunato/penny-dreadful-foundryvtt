@@ -18,10 +18,12 @@ There are no character sheets. There is a scoreboard.
 ## What the system does
 
 - **The scoreboard**: a compact, semi-transparent window that opens for everyone.
-  One row per character, ten penny slots, an eleventh column for the dead. Players
-  can drag it or pop it out into its own browser window; nobody can minimize or
-  close it. A size dropdown (100% to 200%, starting at 110%) resizes it for
-  whoever picks. A book icon opens the rules.
+  One row per character, ten penny slots, an eleventh column for the dead; the
+  rows sit under their own PCs and NPCs headers. Players can drag it or pop it
+  out into its own browser window; nobody can minimize or close it. A size
+  dropdown (100% to 200%, starting at 110%) resizes it for whoever picks. A
+  book icon opens the rules. In the sidebar's Actors tab every actor is
+  labelled (PC-PD) or (NPC-PD), so the two are told apart at a glance.
 - **Who flips**: only the Director and the row's own player can flip a row's
   pennies; an NPC is the Director's alone. Everyone else sees "waiting".
 - **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge;

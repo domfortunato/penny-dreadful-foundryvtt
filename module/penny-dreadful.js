@@ -4,7 +4,7 @@
  */
 import { SYSTEM_ID, TEMPLATES, log } from "./constants.js";
 import { ACTOR_DATA_MODELS } from "./data-models.js";
-import { PDActor } from "./actor.js";
+import { PDActor, registerDirectoryHooks } from "./actor.js";
 import { PDActorSheet } from "./sheet.js";
 import { registerKeybindings, registerSettings } from "./settings.js";
 
@@ -37,6 +37,7 @@ Hooks.once("init", () => {
   registerDiceHoldHooks();
   registerPlayerHooks();
   registerJournalHooks();
+  registerDirectoryHooks();
 
   foundry.applications.handlebars.loadTemplates(Object.values(TEMPLATES));
 });
