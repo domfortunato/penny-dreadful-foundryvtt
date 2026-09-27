@@ -15,7 +15,7 @@ export class PDActor extends foundry.documents.Actor {
   }
 
   get isOnBoard() {
-    return this.type === "character" || this.system.onBoard === true;
+    return this.system.onBoard === true;
   }
 
   /**
@@ -51,13 +51,18 @@ export class PDActor extends foundry.documents.Actor {
 
 const byName = (a, b) => a.name.localeCompare(b.name, game.i18n.lang);
 
-/** The board's two sections: characters by name, and the NPCs the Director has put on it, by name. */
+/**
+ * The board's two sections, each sorted by name: the characters on the board
+ * (they start there; the Director can take one off and put it back), and the
+ * NPCs the Director has put on it.
+ */
 export const boardGroups = () => {
   const characters = [];
   const npcs = [];
   for (const actor of game.actors) {
+    if (!actor.system.onBoard) continue;
     if (actor.type === "character") characters.push(actor);
-    else if (actor.type === "npc" && actor.system.onBoard) npcs.push(actor);
+    else if (actor.type === "npc") npcs.push(actor);
   }
   return { characters: characters.sort(byName), npcs: npcs.sort(byName) };
 };

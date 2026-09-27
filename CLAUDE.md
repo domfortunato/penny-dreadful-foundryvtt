@@ -137,6 +137,16 @@ junction to this folder; the local 14.365 app runs on :30000.
 - The board's general `.pd-scoreboard button` rule outranks a bare class, so a
   button that must look like text (the owner's name) repeats its size in a
   `.pd-scoreboard button.<class>` rule.
+- Board membership is `system.onBoard` for characters and NPCs alike
+  (characters start on, NPCs off; `boardGroups` filters both). The Director
+  adds rows with two toolbar buttons sharing one dialog (`addToBoard(type)`,
+  `templates/dialog/add-actor.html`) and removes any row with its ✕
+  (`removeFromBoard`: withdraw the chat ask, then clear challenge and
+  `onBoard` in one update). The sheet's on-the-board checkbox is
+  Director-only: membership is never the player's to change. The board's
+  size control is a `<select>` of presets (100–200% in tens, `SCALE_DEFAULT`
+  110%): a `change` cannot be an AppV2 action (those are click-only), so
+  `_onRender` wires the fresh element on every render.
 - A challenge is asked for in chat, not in a dialog: `module/request.js` posts
   a card whose stored content is only an empty action area; the Flip button
   (or "waiting" / "flipped" / "withdrawn" / "no longer pending") is drawn per

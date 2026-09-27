@@ -39,20 +39,21 @@
                     <i class="fa-solid fa-forward-step"></i>
                 </button>
             {{/if}}
-            <button type="button" class="pd-icon" data-action="addNpc"
-                    data-tooltip="{{localize 'PD.Board.AddNpc'}}" aria-label="{{localize 'PD.Board.AddNpc'}}">
+            <button type="button" class="pd-icon" data-action="addCharacter"
+                    data-tooltip="{{localize 'PD.Board.AddCharacter'}}" aria-label="{{localize 'PD.Board.AddCharacter'}}">
                 <i class="fa-solid fa-user-plus"></i>
             </button>
+            <button type="button" class="pd-icon" data-action="addNpc"
+                    data-tooltip="{{localize 'PD.Board.AddNpc'}}" aria-label="{{localize 'PD.Board.AddNpc'}}">
+                <i class="fa-solid fa-masks-theater"></i>
+            </button>
         {{/if}}
-        <span class="pd-zoom" data-tooltip="{{localize 'PD.Board.Zoom' percent=scalePercent}}">
-            <button type="button" class="pd-icon" data-action="zoomOut" {{#unless canZoomOut}}disabled{{/unless}}
-                    data-tooltip="{{localize 'PD.Board.ZoomOut'}}" aria-label="{{localize 'PD.Board.ZoomOut'}}">
-                <i class="fa-solid fa-compress"></i>
-            </button>
-            <button type="button" class="pd-icon" data-action="zoomIn" {{#unless canZoomIn}}disabled{{/unless}}
-                    data-tooltip="{{localize 'PD.Board.ZoomIn'}}" aria-label="{{localize 'PD.Board.ZoomIn'}}">
-                <i class="fa-solid fa-expand"></i>
-            </button>
+        <span class="pd-zoom">
+            <select class="pd-zoom-select" data-tooltip="{{localize 'PD.Board.Zoom'}}" aria-label="{{localize 'PD.Board.Zoom'}}">
+                {{#each scaleOptions}}
+                    <option value="{{percent}}" {{#if selected}}selected{{/if}}>{{percent}}%</option>
+                {{/each}}
+            </select>
         </span>
     </div>
     {{#if hasRows}}
@@ -125,12 +126,11 @@
                                         data-tooltip="{{localize 'PD.Board.AddPenny'}}" aria-label="{{localize 'PD.Board.AddPenny'}}">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
-                                {{#if isNpc}}
-                                    <button type="button" class="pd-icon pd-remove" data-action="removeNpc"
-                                            data-tooltip="{{localize 'PD.Board.RemoveNpc'}}" aria-label="{{localize 'PD.Board.RemoveNpc'}}">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                {{/if}}
+                                <button type="button" class="pd-icon pd-remove" data-action="removeFromBoard"
+                                        data-tooltip="{{#if isNpc}}{{localize 'PD.Board.RemoveNpc'}}{{else}}{{localize 'PD.Board.RemoveCharacter'}}{{/if}}"
+                                        aria-label="{{#if isNpc}}{{localize 'PD.Board.RemoveNpc'}}{{else}}{{localize 'PD.Board.RemoveCharacter'}}{{/if}}">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                             </span>
                         {{/if}}
                     </td>

@@ -27,7 +27,8 @@
             <input type="checkbox" name="system.dead" {{checked system.dead}} {{#unless editable}}disabled{{/unless}}>
         </div>
     </div>
-    {{#if isNpc}}
+    {{!-- Board membership is the Director's call, for characters and NPCs alike. --}}
+    {{#if isDirector}}
         <div class="form-group">
             <label>{{localize 'PD.Sheet.OnBoard'}}</label>
             <div class="form-fields">

@@ -78,14 +78,9 @@ export class PennyActorModel extends foundry.abstract.TypeDataModel {
   }
 }
 
-/** A player's character: always on the board. */
+/** A player's character: on the board from the moment it is created, until the Director takes it off. */
 export class CharacterModel extends PennyActorModel {
   static ON_BOARD_INITIAL = true;
-
-  prepareBaseData() {
-    super.prepareBaseData();
-    this.onBoard = true;
-  }
 }
 
 /**

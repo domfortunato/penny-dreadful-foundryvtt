@@ -6,6 +6,11 @@ one, writes the section into the release tag, and the Release Creation workflow
 creates the release with it. `npm run release X.Y.Z -- --dry-run` shows the exact
 body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 
+## Unreleased
+
+- The Director can take characters off the board and put them back: every row now has a remove button, and the toolbar gains an Add-a-character button beside Add-an-NPC (pick an off-board actor, or type a name to create one). A removed row's pending ask is withdrawn, and its return is one click
+- The board's size is a dropdown of presets (100% to 200% in tens) instead of two zoom buttons, and the board now starts at 110%; a size already picked is kept
+
 ## 0.1.0
 
 **Requires Foundry VTT 14.365 or higher.** No modules are needed.

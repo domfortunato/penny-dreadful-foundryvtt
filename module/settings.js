@@ -1,5 +1,5 @@
 import { MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS } from "./constants.js";
-import { openScoreboard, rerenderScoreboard } from "./scoreboard.js";
+import { SCALE_DEFAULT, openScoreboard, rerenderScoreboard } from "./scoreboard.js";
 import { onCoinsCleared, onHoldChanged } from "./dice-hold.js";
 
 export const registerSettings = () => {
@@ -56,9 +56,10 @@ export const registerSettings = () => {
     scope: "client", config: false, type: Object, default: {},
   });
   // How big this client wants the board. Everything on it is sized from
-  // this one number, so fonts, pennies and buttons grow together.
+  // this one number, so fonts, pennies and buttons grow together. The board
+  // starts a notch over its design size; a client that has picked keeps it.
   game.settings.register(NS, "scoreboardScale", {
-    scope: "client", config: false, type: Number, default: 1,
+    scope: "client", config: false, type: Number, default: SCALE_DEFAULT,
     onChange: () => rerenderScoreboard(),
   });
 };

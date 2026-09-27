@@ -74,7 +74,7 @@ try {
   check(inPopup.styled && inPopup.styled !== "none", "system stylesheet applies in the popup");
   await popup.screenshot({ path: `${OUT}/detached.png` });
 
-  // Zoom in from the popup: the board must ask its window to grow. Headless
+  // Pick a bigger size from the popup: the board must ask its window to grow. Headless
   // Chromium reports the popup's own size as the screen, which caps any resize
   // at the current size, so the screen is enlarged and resizeTo recorded.
   await page.evaluate(() => game.settings.set("penny-dreadful", "scoreboardScale", 1));
@@ -88,8 +88,7 @@ try {
     window.resizeTo = (w, h) => { globalThis.__pdResize.push([w, h]); return orig(w, h); };
   });
   const small = await popup.evaluate(() => document.getElementById("pd-scoreboard").getBoundingClientRect().width);
-  await popup.click('#pd-scoreboard button[data-action="zoomIn"]');
-  await popup.click('#pd-scoreboard button[data-action="zoomIn"]');
+  await popup.selectOption("#pd-scoreboard select.pd-zoom-select", "140");
   await popup.waitForTimeout(1200);
   const zoom = await popup.evaluate(() => ({ resizes: globalThis.__pdResize, style: document.getElementById("pd-scoreboard").getAttribute("style") }));
   console.log("zoom:", JSON.stringify({ small, ...zoom }));

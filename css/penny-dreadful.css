@@ -108,6 +108,33 @@
     padding-left: calc(8 * var(--pd-u));
 }
 
+/* The size dropdown, dressed like the toolbar's buttons and sized in the
+   board's own unit, so it grows along with what it resizes. */
+.pd-scoreboard select.pd-zoom-select {
+    height: calc(20 * var(--pd-u));
+    padding: 0 calc(4 * var(--pd-u));
+    font-size: calc(11 * var(--pd-u));
+    line-height: calc(18 * var(--pd-u));
+    border: 1px solid var(--pd-line);
+    border-radius: calc(10 * var(--pd-u));
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--pd-fg);
+    cursor: pointer;
+}
+
+.pd-scoreboard select.pd-zoom-select:hover,
+.pd-scoreboard select.pd-zoom-select:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--pd-copper-hi);
+    outline: none;
+}
+
+/* The open list is native; keep its rows readable on the dark board. */
+.pd-scoreboard select.pd-zoom-select option {
+    background: var(--pd-bg);
+    color: var(--pd-fg);
+}
+
 .pd-empty {
     margin: calc(4 * var(--pd-u)) 0;
     color: var(--pd-fg-dim);

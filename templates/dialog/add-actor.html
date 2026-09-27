@@ -1,9 +1,10 @@
+{{!-- The add-to-the-board dialog, one template for both types: `labels` carries the type's keys. --}}
 <div>
     {{#if candidates.length}}
         <div class="form-group">
-            <label>{{localize 'PD.Dialog.AddNpcPick'}}</label>
+            <label>{{localize labels.pick}}</label>
             <div class="form-fields">
-                <select name="npc">
+                <select name="actor">
                     <option value=""></option>
                     {{#each candidates}}
                         <option value="{{id}}">{{name}}</option>
@@ -12,12 +13,12 @@
             </div>
         </div>
     {{else}}
-        <p class="hint">{{localize 'PD.Dialog.AddNpcNone'}}</p>
+        <p class="hint">{{localize labels.none}}</p>
     {{/if}}
     <div class="form-group">
-        <label>{{localize 'PD.Dialog.AddNpcNew'}}</label>
+        <label>{{localize labels.create}}</label>
         <div class="form-fields">
-            <input type="text" name="newName" placeholder="{{localize 'PD.Dialog.AddNpcPlaceholder'}}">
+            <input type="text" name="newName" placeholder="{{localize 'PD.Dialog.AddPlaceholder'}}">
         </div>
     </div>
 </div>

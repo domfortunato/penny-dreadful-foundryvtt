@@ -47,13 +47,37 @@ export const removePenny = async (actor) => {
   await actor.update({ "system.pennies": n - 1 });
 };
 
-/** Put an existing NPC on the board, or create one by name and put it there. */
-export const addNpc = async () => {
-  if (!isDirector()) return;
-  const candidates = game.actors.filter((a) => a.type === "npc" && !a.system.onBoard).sort(byName);
-  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addNpc, { candidates });
+/**
+ * The add dialog's text, per type. The flow is the same for both; only the
+ * words differ. Full keys, written out, so the i18n gate can see them.
+ */
+const ADD_LABELS = {
+  character: {
+    title: "PD.Dialog.AddCharacterTitle",
+    pick: "PD.Dialog.AddCharacterPick",
+    none: "PD.Dialog.AddCharacterNone",
+    create: "PD.Dialog.AddCharacterNew",
+  },
+  npc: {
+    title: "PD.Dialog.AddNpcTitle",
+    pick: "PD.Dialog.AddNpcPick",
+    none: "PD.Dialog.AddNpcNone",
+    create: "PD.Dialog.AddNpcNew",
+  },
+};
+
+/**
+ * Put an existing off-board actor of this type on the board, or create one by
+ * name and put it there. A new character starts with no player; the Director
+ * hands it to one through Foundry's ownership dialog, as usual.
+ */
+export const addToBoard = async (type) => {
+  const labels = ADD_LABELS[type];
+  if (!isDirector() || !labels) return;
+  const candidates = game.actors.filter((a) => a.type === type && !a.system.onBoard).sort(byName);
+  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addActor, { candidates, labels });
   const result = await foundry.applications.api.DialogV2.wait({
-    window: { title: "PD.Dialog.AddNpcTitle", icon: "fa-solid fa-user-plus" },
+    window: { title: labels.title, icon: "fa-solid fa-user-plus" },
     classes: ["penny-dreadful", "pd-dialog"],
     content,
     rejectClose: false,
@@ -62,7 +86,7 @@ export const addNpc = async () => {
       {
         action: "add", label: "PD.Dialog.Add", icon: "fa-solid fa-plus", default: true,
         callback: (event, button) => ({
-          id: button.form.elements.npc?.value ?? "",
+          id: button.form.elements.actor?.value ?? "",
           name: (button.form.elements.newName?.value ?? "").trim(),
         }),
       },
@@ -71,15 +95,16 @@ export const addNpc = async () => {
   });
   if (!result || typeof result !== "object") return;
   if (result.name) {
-    await foundry.documents.Actor.create({ name: result.name, type: "npc", system: { onBoard: true } });
+    await foundry.documents.Actor.create({ name: result.name, type, system: { onBoard: true } });
     return;
   }
   const actor = game.actors.get(result.id);
   if (actor) await actor.update({ "system.onBoard": true });
 };
 
-export const removeNpc = async (actor) => {
-  if (!isDirector() || actor?.type !== "npc") return;
+/** Take a row off the board, character or NPC; its pending challenge is withdrawn with it. */
+export const removeFromBoard = async (actor) => {
+  if (!isDirector() || !actor) return;
   await withdrawRequests(actor);
   await actor.update({ "system.onBoard": false, "system.challenge": CLEARED });
 };

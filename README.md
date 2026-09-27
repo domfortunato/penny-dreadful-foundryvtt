@@ -20,14 +20,15 @@ There are no character sheets. There is a scoreboard.
 - **The scoreboard**: a compact, semi-transparent window that opens for everyone.
   One row per character, ten penny slots, an eleventh column for the dead. Players
   can drag it or pop it out into its own browser window; nobody can minimize or
-  close it. Two buttons make it bigger or smaller (100% to 200%) for whoever
-  presses them. A book icon opens the rules.
+  close it. A size dropdown (100% to 200%, starting at 110%) resizes it for
+  whoever picks. A book icon opens the rules.
 - **Who flips**: only the Director and the row's own player can flip a row's
   pennies; an NPC is the Director's alone. Everyone else sees "waiting".
 - **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge;
   minus and plus adjust pennies; a star marks whose turn it is and a Next arrow
-  advances it; NPCs can be added to the board, where they sit in their own
-  section under the characters with a slot for each penny they can hold.
+  advances it; characters and NPCs can be taken off the board and added back
+  (or created by name) from the toolbar. NPCs sit in their own section under
+  the characters with a slot for each penny they can hold.
 - **The flip**: the Director's request lands in chat as a card with a Flip
   button; the player flips from the card or from the board, and the pennies are
   rolled as Foundry coins. The result lands in chat as a card of copper cents

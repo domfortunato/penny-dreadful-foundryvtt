@@ -15,7 +15,10 @@
  * (for Alice and the Director only; no dialog); the flip resolves and
  * the board follows; a forced ten-penny failure marks death; minus revives;
  * an NPC sits in its own section, dies on a forced five-penny failure and is
- * removed. Creates users Alice and
+ * removed; the Director takes a character off the board (its pending ask is
+ * withdrawn) and puts it back through the add dialog, or creates one by name;
+ * the size dropdown starts a fresh client at 110% and a pick resizes and
+ * persists. Creates users Alice and
  * Bob if missing and resets Alice's row each run.
  *
  * Playwright is not a dependency of this repo. The script resolves it from
@@ -203,11 +206,11 @@ try {
   // Auto-created character appears (the GM client creates it on userConnected).
   await gm.waitForFunction(() => game.actors.some((a) => a.type === "character" && a.name === "Alice"), null, { timeout: 20000 })
     .then(() => ok("GM client auto-created Alice's character")).catch(() => fail("no character auto-created for Alice"));
-  // Deterministic start for re-runs: one penny, alive, no challenge.
+  // Deterministic start for re-runs: one penny, alive, on the board, no challenge.
   await gm.evaluate(async () => {
     const a = game.actors.find((x) => x.type === "character" && x.name === "Alice");
-    if (a) await a.update({ "system.pennies": 1, "system.dead": false, "system.challenge": { ds: null, issuedBy: "", issuedAt: null } });
-    for (const n of game.actors.filter((x) => x.name === "The Killer")) await n.delete();
+    if (a) await a.update({ "system.pennies": 1, "system.dead": false, "system.onBoard": true, "system.challenge": { ds: null, issuedBy: "", issuedAt: null } });
+    for (const n of game.actors.filter((x) => ["The Killer", "Smoke Extra"].includes(x.name))) await n.delete();
   });
   await al.waitForTimeout(1500);
   const s2 = await al.evaluate(() => {
@@ -495,9 +498,66 @@ try {
     await gm.click('#pd-scoreboard button[data-action="holdCoins"]');
     await gm.waitForFunction(() => game.settings.get("penny-dreadful", "holdCoins") === false, null, { timeout: 10000 }).catch(() => fail("hold toggle did not clear"));
   }
-  await gm.click(`#pd-scoreboard tr[data-actor-id="${npcId}"] button[data-action="removeNpc"]`);
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${npcId}"] button[data-action="removeFromBoard"]`);
   await gm.waitForTimeout(600);
   check(await gm.evaluate((id) => !game.actors.get(id).system.onBoard, npcId), "NPC removed from the board");
+
+  // The Director takes a character off the board: the row leaves every board,
+  // its pending ask is withdrawn, and the add dialog offers it back.
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="1"]`);
+  await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === 1, aliceId, { timeout: 10000 }).catch(() => {});
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="removeFromBoard"]`);
+  await gm.waitForFunction((a) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`), aliceId, { timeout: 10000 }).catch(() => {});
+  const removed = await gm.evaluate((a) => ({
+    row: !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`),
+    onBoard: game.actors.get(a).system.onBoard, ds: game.actors.get(a).system.challenge.ds,
+    card: [...document.querySelectorAll(`#chat .pd-request-card[data-actor-id="${a}"]`)].pop()?.dataset.state,
+  }), aliceId);
+  check(!removed.row && removed.onBoard === false && removed.ds === null, `removing a character clears its row and challenge (${JSON.stringify(removed)})`);
+  check(removed.card === "withdrawn", `the removed character's ask reads withdrawn (${removed.card})`);
+  await al.waitForFunction((a) => !document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"]`), aliceId, { timeout: 10000 })
+    .then(() => ok("the removed row leaves the player's board too")).catch(() => fail("the removed row leaves the player's board too"));
+  // Back on through the add dialog.
+  await gm.click('#pd-scoreboard button[data-action="addCharacter"]');
+  await gm.waitForSelector('.pd-dialog select[name="actor"]', { timeout: 10000 });
+  check(await gm.evaluate((a) => [...document.querySelectorAll('.pd-dialog select[name="actor"] option')].some((o) => o.value === a), aliceId),
+    "the add dialog offers the off-board character");
+  await gm.selectOption('.pd-dialog select[name="actor"]', aliceId);
+  await gm.click('.pd-dialog button[data-action="add"]');
+  await gm.waitForSelector(`#pd-scoreboard tr[data-actor-id="${aliceId}"]`, { timeout: 10000 })
+    .then(() => ok("the character is back on the board")).catch(() => fail("the character is back on the board"));
+  // A brand-new character by name from the same dialog.
+  await gm.click('#pd-scoreboard button[data-action="addCharacter"]');
+  await gm.waitForSelector('.pd-dialog input[name="newName"]', { timeout: 10000 });
+  await gm.fill('.pd-dialog input[name="newName"]', "Smoke Extra");
+  await gm.click('.pd-dialog button[data-action="add"]');
+  await gm.waitForFunction(() => game.actors.getName("Smoke Extra")?.type === "character", null, { timeout: 10000 }).catch(() => {});
+  const extra = await gm.evaluate(() => {
+    const a = game.actors.getName("Smoke Extra");
+    return { type: a?.type, onBoard: a?.system.onBoard, row: !!a && !!document.querySelector(`#pd-scoreboard tr[data-actor-id="${a.id}"]`) };
+  });
+  check(extra.type === "character" && extra.onBoard === true && extra.row, `a new character by name lands on the board (${JSON.stringify(extra)})`);
+  await gm.evaluate(async () => { await game.actors.getName("Smoke Extra")?.delete(); });
+
+  // The size dropdown: 100%-200% presets, a fresh client's 110%, a pick that sticks.
+  const zoom = await gm.evaluate(async () => {
+    await game.settings.set("penny-dreadful", "scoreboardScale",
+      game.settings.settings.get("penny-dreadful.scoreboardScale").default);
+    await new Promise((r) => setTimeout(r, 400));
+    const select = document.querySelector("#pd-scoreboard select.pd-zoom-select");
+    return { options: select ? [...select.options].map((o) => o.value) : null, value: select?.value,
+      scale: document.getElementById("pd-scoreboard").style.getPropertyValue("--pd-scale") };
+  });
+  check(zoom.options?.length === 11 && zoom.options[0] === "100" && zoom.options.at(-1) === "200",
+    `the size dropdown offers 100%-200% (${zoom.options?.join(",")})`);
+  check(zoom.value === "110" && zoom.scale === "1.1", `a fresh client starts at 110% (${JSON.stringify(zoom)})`);
+  await gm.selectOption("#pd-scoreboard select.pd-zoom-select", "150");
+  await gm.waitForFunction(() => document.getElementById("pd-scoreboard")?.style.getPropertyValue("--pd-scale") === "1.5", null, { timeout: 10000 }).catch(() => {});
+  const picked = await gm.evaluate(() => ({ setting: game.settings.get("penny-dreadful", "scoreboardScale"),
+    scale: document.getElementById("pd-scoreboard").style.getPropertyValue("--pd-scale"),
+    value: document.querySelector("#pd-scoreboard select.pd-zoom-select")?.value }));
+  check(picked.setting === 1.5 && picked.scale === "1.5" && picked.value === "150", `picking 150% resizes and persists (${JSON.stringify(picked)})`);
+  await gm.evaluate(async () => { await game.settings.set("penny-dreadful", "scoreboardScale", 1.1); });
 
   // A row that flipped once and is then deleted: its old request still names
   // it, its new request offers no Flip, and nothing can flip it.

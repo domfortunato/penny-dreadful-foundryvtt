@@ -1,11 +1,15 @@
 import { MAX_DS, MAX_PENNIES, NS, TEMPLATES, canSetWorld, t, warn } from "./constants.js";
 
-/** The board's zoom range and step. 1 is the size it was designed at. */
+/**
+ * The board's size range and step: the dropdown's presets, 100% to 200% in
+ * tens. 1 is the size the board was designed at; it starts a notch bigger.
+ */
 const SCALE_MIN = 1;
 const SCALE_MAX = 2;
 const SCALE_STEP = 0.1;
+export const SCALE_DEFAULT = 1.1;
 import { boardGroups } from "./actor.js";
-import { addNpc, addPenny, issueChallenge, removeNpc, removePenny } from "./challenge.js";
+import { addPenny, addToBoard, issueChallenge, removeFromBoard, removePenny } from "./challenge.js";
 import { canFlipFor, flip, isFlipping } from "./flip.js";
 import { clearCoinsEverywhere, coinsHeld, diceModuleAvailable, toggleHoldCoins } from "./dice-hold.js";
 
@@ -54,11 +58,10 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       openOdds: PDScoreboard.#onOpenOdds,
       holdCoins: PDScoreboard.#onHoldCoins,
       clearCoins: PDScoreboard.#onClearCoins,
+      addCharacter: PDScoreboard.#onAddCharacter,
       addNpc: PDScoreboard.#onAddNpc,
-      removeNpc: PDScoreboard.#onRemoveNpc,
+      removeFromBoard: PDScoreboard.#onRemoveFromBoard,
       openSheet: PDScoreboard.#onOpenSheet,
-      zoomIn: PDScoreboard.#onZoomIn,
-      zoomOut: PDScoreboard.#onZoomOut,
     },
   };
 
@@ -115,9 +118,9 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   static get scale() {
     try {
       const v = Number(game.settings.get(NS, "scoreboardScale"));
-      return Number.isFinite(v) ? Math.clamp(v, SCALE_MIN, SCALE_MAX) : 1;
+      return Number.isFinite(v) ? Math.clamp(v, SCALE_MIN, SCALE_MAX) : SCALE_DEFAULT;
     } catch {
-      return 1;
+      return SCALE_DEFAULT;
     }
   }
 
@@ -135,6 +138,13 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onRender(context, options) {
     await super._onRender?.(context, options);
     this.element.style.setProperty("--pd-scale", String(PDScoreboard.scale));
+    // The size dropdown. A `change`, not a click, so it cannot be an AppV2
+    // action; the part is rebuilt on every render, so the fresh element gets
+    // its own listener and nothing stacks.
+    this.element.querySelector("select.pd-zoom-select")?.addEventListener("change", (event) => {
+      PDScoreboard.setScale(Number(event.target.value) / 100)
+        .catch((err) => warn("could not set the board size:", err));
+    });
     // The element just changed size. In the main window, put it back inside the
     // viewport if it grew past an edge. Popped out, it is its window's primary app,
     // and core pinned max-width/height inline at detach time: only `_refit` clears
@@ -179,9 +189,11 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       hasRows: rows.length > 0,
       // name, the widest hand of pennies, the dead, the actions
       columns: MAX_PENNIES + 3,
-      scalePercent: Math.round(scale * 100),
-      canZoomIn: scale < SCALE_MAX - 1e-9,
-      canZoomOut: scale > SCALE_MIN + 1e-9,
+      // The size dropdown's presets, with the client's current one marked.
+      scaleOptions: Array.from({ length: Math.round((SCALE_MAX - SCALE_MIN) / SCALE_STEP) + 1 }, (_, i) => {
+        const percent = Math.round((SCALE_MIN + i * SCALE_STEP) * 100);
+        return { percent, selected: percent === Math.round(scale * 100) };
+      }),
     };
   }
 
@@ -266,26 +278,22 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     await clearCoinsEverywhere();
   }
 
-  static async #onAddNpc() {
-    await addNpc();
+  static async #onAddCharacter() {
+    await addToBoard("character");
   }
 
-  static async #onRemoveNpc(event, target) {
+  static async #onAddNpc() {
+    await addToBoard("npc");
+  }
+
+  static async #onRemoveFromBoard(event, target) {
     const actor = actorFrom(target);
-    if (actor) await removeNpc(actor);
+    if (actor) await removeFromBoard(actor);
   }
 
   static #onOpenSheet(event, target) {
     const actor = actorFrom(target);
     if (actor?.isOwner) renderFromBoard(actor.sheet);
-  }
-
-  static async #onZoomIn() {
-    await PDScoreboard.setScale(PDScoreboard.scale + SCALE_STEP);
-  }
-
-  static async #onZoomOut() {
-    await PDScoreboard.setScale(PDScoreboard.scale - SCALE_STEP);
   }
 }
 

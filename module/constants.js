@@ -17,7 +17,7 @@ export const TEMPLATES = {
   actorSheet: `systems/${SYSTEM_ID}/templates/actor-sheet.html`,
   flipCard: `systems/${SYSTEM_ID}/templates/chat/flip-card.html`,
   requestCard: `systems/${SYSTEM_ID}/templates/chat/flip-request.html`,
-  addNpc: `systems/${SYSTEM_ID}/templates/dialog/add-npc.html`,
+  addActor: `systems/${SYSTEM_ID}/templates/dialog/add-actor.html`,
 };
 
 /**
