@@ -1,4 +1,4 @@
-import { NS, SYSTEM_ID, t } from "./constants.js";
+import { NS, SYSTEM_ID } from "./constants.js";
 import { renderFromBoard } from "./scoreboard.js";
 
 /** The journals the importers under tools/import/ write; `check:manifest` keeps the ids equal. */
@@ -13,7 +13,7 @@ const openJournal = async (id, name, options = {}) => {
     const entry = pack?.index.find((e) => e.name === name);
     doc = entry ? await pack.getDocument(entry._id) : null;
   }
-  if (!doc) return ui.notifications.warn(t("PD.Notify.JournalMissing", { name }));
+  if (!doc) return ui.notifications.warn("PD.Notify.JournalMissing", { format: { name } });
   return renderFromBoard(doc.sheet, options);
 };
 

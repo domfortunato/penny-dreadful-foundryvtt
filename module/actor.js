@@ -42,7 +42,7 @@ export class PDActor extends foundry.documents.Actor {
     }
     const flip = options.pdFlip;
     if (flip && this.system.challenge.issuedAt !== flip.issuedAt) {
-      if (user.isSelf) ui.notifications.info(t("PD.Notify.AlreadyResolved", { name: this.name }));
+      if (user.isSelf) ui.notifications.info("PD.Notify.AlreadyResolved", { format: { name: this.name } });
       return false;
     }
     return allowed;

@@ -1,4 +1,4 @@
-import { NS, t, warn } from "./constants.js";
+import { NS, warn } from "./constants.js";
 
 const creating = new Set();
 
@@ -28,7 +28,7 @@ export const ensureCharacterFor = async (user, { force = false } = {}) => {
       ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [user.id]: OWNER },
     });
     if (actor && !user.character) await user.update({ character: actor.id });
-    ui.notifications.info(t("PD.Notify.CharacterCreated", { player: user.name }));
+    ui.notifications.info("PD.Notify.CharacterCreated", { format: { player: user.name } });
   } catch (err) {
     warn(`could not create a character for ${user.name}:`, err);
   } finally {

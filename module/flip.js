@@ -55,9 +55,9 @@ const OUTCOME_TEXT = {
 export const flip = async (actor) => {
   if (!actor || !game.actors.has(actor.id)) return;
   const challenge = actor.system.challenge;
-  if (challenge.ds === null) return ui.notifications.warn(t("PD.Notify.NoChallenge", { name: actor.name }));
-  if (!canFlipFor(actor)) return ui.notifications.warn(t("PD.Notify.NotOwner", { name: actor.name }));
-  if (actor.system.dead) return ui.notifications.warn(t("PD.Notify.Dead", { name: actor.name }));
+  if (challenge.ds === null) return ui.notifications.warn("PD.Notify.NoChallenge", { format: { name: actor.name } });
+  if (!canFlipFor(actor)) return ui.notifications.warn("PD.Notify.NotOwner", { format: { name: actor.name } });
+  if (actor.system.dead) return ui.notifications.warn("PD.Notify.Dead", { format: { name: actor.name } });
   if (flipping.has(actor.id)) return;
   flipping.add(actor.id);
   rerenderScoreboard();
@@ -119,7 +119,7 @@ export const flip = async (actor) => {
     // the flipper: the Director checks the pennies, a player asks them to.
     if (message) {
       const key = game.user.isGM ? "PD.Notify.FlipNotRecordedDirector" : "PD.Notify.FlipNotRecorded";
-      ui.notifications.error(t(key, { name: actor.name }));
+      ui.notifications.error(key, { format: { name: actor.name } });
     }
   } finally {
     flipping.delete(actor.id);

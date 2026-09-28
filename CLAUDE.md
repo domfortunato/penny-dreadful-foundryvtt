@@ -169,18 +169,27 @@ junction to this folder; the local 14.365 app runs on :30000.
   the no-button the default, so Enter never removes.
 - The new-one-shot tool (`startNewOneShot` in director.js, the clapperboard)
   resets a world Dom reuses between one-shots. ORDER AND GUARDS ARE
-  DELIBERATE (fifth review): everything is re-read AFTER the confirm (core
-  deletes look ids up with `strict: true`, so a stale pre-dialog list can
-  throw mid-reset); on-board NPCs are benched BEFORE the characters are
-  deleted (never deleted — an NPC is the Director's prep), so a second
-  GM's spotlight keeper has no row to advance onto; the chat is cleared
+  DELIBERATE (fifth and sixth reviews): everything is re-read AFTER the
+  confirm (core deletes look ids up with `strict: true`, so a stale
+  pre-dialog list can throw mid-reset); the spotlight is cleared FIRST,
+  because the keeper's hooks fire on the bench and on the delete — left on
+  an NPC it would hop onto a PC the next step deletes, and a second GM's
+  keeper could write that hop after the reset's own clear (an Assistant
+  Director cannot clear it; the keeper then walks it to "" through the
+  delete, NPCs benched before the characters go so it never lands on one —
+  an NPC is the Director's prep, never deleted); the chat is cleared
   LAST via `ChatMessage.deleteDocuments([], {deleteAll: true})` (core's
   `messages.flush()` would stack a second confirm; and clearing early
   turns a later failure into a half-reset); and `ensureCharacterFor` runs
   with `{force: true}`, because the clicking Director need not be
   `game.users.activeGM` and the designation guard would silently recreate
-  nothing. Off-board actors live in the Actors tab; that is where
-  "nothing is deleted" points.
+  nothing. ACCEPTED RISK (sixth review): `force` also gives up that
+  guard's single-writer property — with two GMs online, a player
+  connecting mid-reset, or both GMs confirming at once, can get two
+  characters; the window is one create round trip, no socket-free fix
+  keeps the common case working, and the recovery is deleting a row.
+  Off-board actors live in the Actors tab; that is where "nothing is
+  deleted" points.
 - A character's player is assigned on its sheet, not in Foundry's ownership
   dialog: the Director's Player dropdown calls `assignPlayer` (players.js),
   which makes the chosen user the row's one explicit non-GM OWNER (other
@@ -206,3 +215,8 @@ junction to this folder; the local 14.365 app runs on :30000.
   never another player with owner rights, and an NPC only the Director. The
   server cannot enforce it (no socket); a player could still write their own
   actor from the console, which the board shows.
+- A notice passes the KEY plus `{format: {...}}` to `ui.notifications.*`,
+  never a string pre-formatted with `t()`: for a known key core escapes the
+  format values and skips `cleanHTML` (notifications.mjs:108-122), where a
+  pre-formatted message is sanitized instead and a player name like
+  "Bob <the Bold>" loses its markup-looking part (sixth review).

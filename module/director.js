@@ -7,23 +7,29 @@ const DEFAULT_GM_NAMES = ["gamemaster", "game master"];
 const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
 
 /**
- * Reset the world for the next one-shot, behind one confirm: every character
- * is deleted, the chat log is cleared, on-board NPCs are benched (an NPC is
- * the Director's prep and is kept), the spotlight goes out, and a fresh
+ * Reset the world for the next one-shot, behind one confirm: the spotlight
+ * goes out, on-board NPCs are benched (an NPC is the Director's prep and is
+ * kept), every character is deleted, the chat log is cleared, and a fresh
  * character is made for each connected player (the auto-create setting still
  * rules; `force` skips only the designated-GM check, because the Director
  * who clicked need not be `game.users.activeGM`). The order matters:
  * everything is re-read AFTER the confirm (a row deleted while the dialog
  * sat open would make the batch throw on its stale id — core looks each id
- * up with `strict: true`); the NPCs are benched BEFORE the characters are
- * deleted, so another GM's spotlight keeper has no on-board row left to
- * advance onto mid-reset; and the chat is cleared last, so a failure
- * earlier leaves the log intact. The chat clear is the flush dialog's own
- * yes-callback (`deleteDocuments([], {deleteAll: true})`):
- * `game.messages.flush()` would ask again in a second dialog of its own.
+ * up with `strict: true`); the spotlight is cleared FIRST, because the
+ * keeper's hooks fire on the bench (`onBoard` false) and on the delete — a
+ * spotlight left on an NPC would hop onto a PC the next step deletes, and a
+ * second GM's keeper could write that hop after this client's own clear;
+ * with the spotlight already dark neither hook matches. (An Assistant
+ * Director cannot write the setting; the keeper then walks the spotlight to
+ * "" through the delete step instead, benched NPCs first so it never lands
+ * on one.) The chat is cleared last, so a failure earlier leaves the log
+ * intact, via the flush dialog's own yes-callback
+ * (`deleteDocuments([], {deleteAll: true})`): `game.messages.flush()`
+ * would ask again in a second dialog of its own.
  */
 export const startNewOneShot = async () => {
   if (!game.user.isGM) return;
+  const fmt = new Intl.NumberFormat(game.i18n.lang);
   const bodyKey = pluralKey(game.messages.size, {
     one: "PD.Dialog.OneShotBodyOne",
     other: "PD.Dialog.OneShotBody",
@@ -32,20 +38,20 @@ export const startNewOneShot = async () => {
     window: { title: "PD.Dialog.OneShotTitle", icon: "fa-solid fa-clapperboard" },
     classes: ["penny-dreadful", "pd-dialog"],
     content: `<p>${t(bodyKey, {
-      characters: game.actors.filter((a) => a.type === "character").length,
-      messages: game.messages.size,
+      characters: fmt.format(game.actors.filter((a) => a.type === "character").length),
+      messages: fmt.format(game.messages.size),
     })}</p>`,
     rejectClose: false,
     renderOptions: boardWindowOptions(),
   });
   if (confirmed !== true) return;
+  if (canSetWorld()) await setSpotlight("");
   const benched = game.actors
     .filter((a) => a.type === "npc" && a.system.onBoard)
     .map((a) => ({ _id: a.id, "system.onBoard": false, "system.challenge": { ...CLEARED } }));
   if (benched.length) await foundry.documents.Actor.updateDocuments(benched);
   const characters = game.actors.filter((a) => a.type === "character").map((a) => a.id);
   if (characters.length) await foundry.documents.Actor.deleteDocuments(characters);
-  if (canSetWorld()) await setSpotlight("");
   await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
   for (const user of game.users) {
     if (user.active) await ensureCharacterFor(user, { force: true });
