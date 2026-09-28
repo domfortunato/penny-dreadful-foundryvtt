@@ -1,4 +1,4 @@
-import { NS, canSetWorld, pluralKey, t, warn } from "./constants.js";
+import { NS, TYPE_NPC, TYPE_PC, canSetWorld, pluralKey, t, warn } from "./constants.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { ensureCharacterFor } from "./players.js";
 import { setSpotlight } from "./spotlight.js";
@@ -38,7 +38,7 @@ export const startNewOneShot = async () => {
     window: { title: "PD.Dialog.OneShotTitle", icon: "fa-solid fa-clapperboard" },
     classes: ["penny-dreadful", "pd-dialog"],
     content: `<p>${t(bodyKey, {
-      characters: fmt.format(game.actors.filter((a) => a.type === "character").length),
+      characters: fmt.format(game.actors.filter((a) => a.type === TYPE_PC).length),
       messages: fmt.format(game.messages.size),
     })}</p>`,
     rejectClose: false,
@@ -47,10 +47,10 @@ export const startNewOneShot = async () => {
   if (confirmed !== true) return;
   if (canSetWorld()) await setSpotlight("");
   const benched = game.actors
-    .filter((a) => a.type === "npc" && a.system.onBoard)
+    .filter((a) => a.type === TYPE_NPC && a.system.onBoard)
     .map((a) => ({ _id: a.id, "system.onBoard": false, "system.challenge": { ...CLEARED } }));
   if (benched.length) await foundry.documents.Actor.updateDocuments(benched);
-  const characters = game.actors.filter((a) => a.type === "character").map((a) => a.id);
+  const characters = game.actors.filter((a) => a.type === TYPE_PC).map((a) => a.id);
   if (characters.length) await foundry.documents.Actor.deleteDocuments(characters);
   await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
   for (const user of game.users) {

@@ -1,4 +1,5 @@
-import { TEMPLATES, warn } from "./constants.js";
+import { TEMPLATES, TYPE_NPC, warn } from "./constants.js";
+import { ownerUserOf } from "./actor.js";
 import { assignPlayer } from "./players.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
@@ -24,15 +25,15 @@ export class PDActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const actor = this.document;
-    context.isNpc = actor.type === "npc";
+    context.isNpc = actor.type === TYPE_NPC;
     context.isDirector = game.user.isGM;
-    context.playerName = actor.ownerUser?.name ?? null;
+    context.playerName = ownerUserOf(actor)?.name ?? null;
     context.system = actor.system;
     context.maxPennies = actor.system.maxPennies;
     // The Director's Player dropdown: every player, the row's own marked.
     context.players = game.users
       .filter((u) => !u.isGM)
-      .map((u) => ({ id: u.id, name: u.name, selected: u.id === actor.ownerUser?.id }))
+      .map((u) => ({ id: u.id, name: u.name, selected: u.id === ownerUserOf(actor)?.id }))
       .sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
     return context;
   }

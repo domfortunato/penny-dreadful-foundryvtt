@@ -1,4 +1,5 @@
-import { NS, warn } from "./constants.js";
+import { NS, TYPE_PC, warn } from "./constants.js";
+import { ownerUserOf } from "./actor.js";
 
 const creating = new Set();
 
@@ -18,13 +19,13 @@ export const ensureCharacterFor = async (user, { force = false } = {}) => {
   const OWNER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
   // An explicit entry, not `ownership.default`: a character everyone may edit is
   // nobody's own row, and must not stop this player getting one.
-  if (game.actors.some((a) => a.type === "character" && a.ownership[user.id] === OWNER)) return;
+  if (game.actors.some((a) => a.type === TYPE_PC && a.ownership[user.id] === OWNER)) return;
   if (creating.has(user.id)) return;
   creating.add(user.id);
   try {
     const actor = await foundry.documents.Actor.create({
       name: user.name,
-      type: "character",
+      type: TYPE_PC,
       ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [user.id]: OWNER },
     });
     if (actor && !user.character) await user.update({ character: actor.id });
@@ -46,11 +47,11 @@ export const ensureCharacterFor = async (user, { force = false } = {}) => {
  * their name.
  */
 export const assignPlayer = async (actor, userId) => {
-  if (!game.user.isGM || actor?.type !== "character") return;
+  if (!game.user.isGM || actor?.type !== TYPE_PC) return;
   const OWNER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
   const chosen = userId ? game.users.get(userId) : null;
   if (userId && (!chosen || chosen.isGM)) return;
-  if ((actor.ownerUser?.id ?? null) === (chosen?.id ?? null)) return;
+  if ((ownerUserOf(actor)?.id ?? null) === (chosen?.id ?? null)) return;
   // The whole ownership object is replaced: a partial update cannot remove
   // an entry. {diff: false, recursive: false} scopes the replacement to the
   // keys present in the update, here only `ownership`. (Core's own

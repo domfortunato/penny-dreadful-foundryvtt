@@ -1,4 +1,4 @@
-import { MAX_DS, MAX_PENNIES, NS, TEMPLATES, canSetWorld, t, warn } from "./constants.js";
+import { MAX_DS, MAX_PENNIES, NS, TEMPLATES, TYPE_NPC, TYPE_PC, canSetWorld, t, warn } from "./constants.js";
 
 /**
  * The board's size range and step: the dropdown's presets, 100% to 200% in
@@ -8,7 +8,7 @@ const SCALE_MIN = 1;
 const SCALE_MAX = 2;
 const SCALE_STEP = 0.1;
 export const SCALE_DEFAULT = 1.1;
-import { boardGroups } from "./actor.js";
+import { boardGroups, ownerUserOf } from "./actor.js";
 import { addPenny, addToBoard, issueChallenge, removeFromBoard, removePenny } from "./challenge.js";
 import { canFlipFor, flip, isFlipping } from "./flip.js";
 import { clearCoinsEverywhere, coinsHeld, diceModuleAvailable, toggleHoldCoins } from "./dice-hold.js";
@@ -208,7 +208,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   #row(actor, spotlightId) {
     const sys = actor.system;
     const ds = sys.challenge.ds;
-    const owner = actor.ownerUser;
+    const owner = ownerUserOf(actor);
     // The name is an Edit button only for whoever the row belongs to: the
     // one rule, canFlipFor. `isOwner` would leak the button to anyone with
     // owner rights (a default grant), and to players on NPC rows.
@@ -217,7 +217,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       id: actor.id,
       name: actor.name,
-      isNpc: actor.type === "npc",
+      isNpc: actor.type === TYPE_NPC,
       playerName: owner?.name ?? null,
       playerActive: !!owner?.active,
       playerSameAsName: !!owner && owner.name === actor.name,
@@ -299,11 +299,11 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onAddCharacter() {
-    await addToBoard("character");
+    await addToBoard(TYPE_PC);
   }
 
   static async #onAddNpc() {
-    await addToBoard("npc");
+    await addToBoard(TYPE_NPC);
   }
 
   static async #onRemoveFromBoard(event, target) {

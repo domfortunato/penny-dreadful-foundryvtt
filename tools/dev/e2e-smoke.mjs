@@ -628,14 +628,22 @@ try {
   });
   check(extra.type === "character" && extra.onBoard === true && extra.row, `a new character by name lands on the board (${JSON.stringify(extra)})`);
   const extraId = await gm.evaluate(() => game.actors.getName("Smoke Extra").id);
-  check(await gm.evaluate((id) => !game.actors.get(id).ownerUser, extraId), "a new character belongs to no player");
+  // The explicit-OWNER lookup inline: the PDActor.ownerUser getter is gone
+  // (module Phase A retired the Actor subclass; the helper is ownerUserOf).
+  check(await gm.evaluate((id) => {
+    const a = game.actors.get(id);
+    return !game.users.find((u) => !u.isGM && a.ownership[u.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+  }, extraId), "a new character belongs to no player");
 
   // The sheet's Player dropdown assigns the row to a player; ownership and
   // Foundry's primary-character pointer follow, and the board shows the name.
   await gm.evaluate(async (id) => { await game.actors.get(id).sheet.render({ force: true }); }, extraId);
   await gm.waitForSelector('.pd-sheet select[name="pdPlayer"]', { timeout: 10000 });
   await gm.selectOption('.pd-sheet select[name="pdPlayer"]', { label: "Bob" });
-  await gm.waitForFunction((id) => game.actors.get(id).ownerUser?.name === "Bob", extraId, { timeout: 10000 })
+  await gm.waitForFunction((id) => {
+    const a = game.actors.get(id);
+    return game.users.find((u) => !u.isGM && a.ownership[u.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)?.name === "Bob";
+  }, extraId, { timeout: 10000 })
     .then(() => ok("the sheet dropdown made Bob the player")).catch(() => fail("the sheet dropdown made Bob the player"));
   // The pointer and the row label land in their own writes; wait for each.
   await gm.waitForFunction((id) => game.users.getName("Bob")._source.character === id, extraId, { timeout: 10000 })
@@ -657,7 +665,10 @@ try {
   await gm.waitForTimeout(400);
   // Back to no player, then away.
   await gm.selectOption('.pd-sheet select[name="pdPlayer"]', "");
-  await gm.waitForFunction((id) => !game.actors.get(id).ownerUser, extraId, { timeout: 10000 })
+  await gm.waitForFunction((id) => {
+    const a = game.actors.get(id);
+    return !game.users.find((u) => !u.isGM && a.ownership[u.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+  }, extraId, { timeout: 10000 })
     .then(() => ok('assigning "No player" removed Bob again')).catch(() => fail('assigning "No player" removed Bob again'));
   await gm.waitForFunction(() => game.users.getName("Bob")._source.character === null, null, { timeout: 10000 })
     .then(() => ok("Foundry's pointer was cleared with the player")).catch(() => fail("Foundry's pointer was cleared with the player"));

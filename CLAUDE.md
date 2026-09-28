@@ -10,8 +10,18 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   older cores. Node 24.
 - Plain ES modules, no bundler, no jQuery. Sheets and the scoreboard are
   ApplicationV2 + HandlebarsApplicationMixin; every part renders exactly one root
-  element. Sub-types are `TypeDataModel`s registered in `CONFIG.Actor.dataModels`;
-  there is no `template.json`.
+  element. Sub-types are `TypeDataModel`s MERGED into `CONFIG.Actor.dataModels`
+  (`Object.assign`, never `=`); there is no `template.json`, no Actor subclass
+  and no claim on `CONFIG.Actor.documentClass`: what `PDActor._preUpdate` did
+  (challenge clear on dying/leaving, stale-flip refusal) is a `preUpdateActor`
+  hook in actor.js, which the client runs right after `_preUpdate` on the
+  initiating client, re-cleaning the changes after it so the mutation lands
+  and cancelling on `false` (client-backend.mjs 238-249) — the one difference
+  is that `{noHook: true}` writes (core's ownership dialog) skip it, and none
+  of those touch dead/onBoard/pdFlip. The type names are `TYPE_PC`/`TYPE_NPC`
+  in constants.js; no `"character"`/`"npc"` literal appears outside that file,
+  because the planned module build prefixes them (de-privileging done
+  2026-09-28 as module Phase A — see the module plan in project memory).
 - No `socket`. Every write is made by a client that already has permission:
   the owner writes the flip result, the Director writes everything else.
 - The authority on any API claim is the shipped client at
@@ -211,7 +221,7 @@ junction to this folder; the local 14.365 app runs on :30000.
   `challenge.resolved` with the token, the flipper then marks its flip card
   `applied`, the Director marks a request `withdrawn`; flipped outranks
   withdrawn. Who may flip is one
-  rule, `canFlipFor` in `flip.js`: the Director or the row's `ownerUser`,
+  rule, `canFlipFor` in `flip.js`: the Director or the row's `ownerUserOf`,
   never another player with owner rights, and an NPC only the Director. The
   server cannot enforce it (no socket); a player could still write their own
   actor from the console, which the board shows.

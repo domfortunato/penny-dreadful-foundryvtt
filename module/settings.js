@@ -1,4 +1,4 @@
-import { MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS } from "./constants.js";
+import { MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS, TYPE_NPC } from "./constants.js";
 import { SCALE_DEFAULT, openScoreboard, rerenderScoreboard } from "./scoreboard.js";
 import { onCoinsCleared, onHoldChanged } from "./dice-hold.js";
 
@@ -29,7 +29,7 @@ export const registerSettings = () => {
     }),
     onChange: () => {
       for (const actor of game.actors) {
-        if (actor.type !== "npc") continue;
+        if (actor.type !== TYPE_NPC) continue;
         actor.reset();
         if (actor.sheet?.rendered) actor.sheet.render();
       }

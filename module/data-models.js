@@ -1,4 +1,4 @@
-import { MAX_DS, MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS } from "./constants.js";
+import { MAX_DS, MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS, TYPE_NPC, TYPE_PC } from "./constants.js";
 
 const fields = foundry.data.fields;
 
@@ -101,4 +101,4 @@ export class NpcModel extends PennyActorModel {
   }
 }
 
-export const ACTOR_DATA_MODELS = { character: CharacterModel, npc: NpcModel };
+export const ACTOR_DATA_MODELS = { [TYPE_PC]: CharacterModel, [TYPE_NPC]: NpcModel };

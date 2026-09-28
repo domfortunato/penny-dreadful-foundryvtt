@@ -1,4 +1,5 @@
 import { NS, TEMPLATES, t } from "./constants.js";
+import { ownerUserOf } from "./actor.js";
 import { canFlipFor, flip, isFlipping } from "./flip.js";
 
 /**
@@ -90,8 +91,9 @@ const decorate = (card, message) => {
     area.append(button);
   } else if (state === "pending") {
     // A row with no player of its own (an NPC) is flipped by the Director.
-    const waiting = actor.ownerUser
-      ? t("PD.Chat.RequestWaiting", { name: actor.ownerUser.name })
+    const owner = ownerUserOf(actor);
+    const waiting = owner
+      ? t("PD.Chat.RequestWaiting", { name: owner.name })
       : t("PD.Chat.RequestWaitingDirector");
     area.append(statusLine("fa-solid fa-hourglass-half", waiting));
   } else if (state === "flipping") {

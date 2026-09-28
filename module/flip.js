@@ -1,4 +1,5 @@
-import { NS, TEMPLATES, pluralKey, t, warn } from "./constants.js";
+import { NS, TEMPLATES, TYPE_PC, pluralKey, t, warn } from "./constants.js";
+import { ownerUserOf } from "./actor.js";
 import { awaitDiceAnimation } from "./dice-hold.js";
 import { refreshRequestCards } from "./request.js";
 import { rerenderScoreboard } from "./scoreboard.js";
@@ -7,14 +8,14 @@ const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
 
 /**
  * Whose row is this: the Director, and the row's own player (its explicit
- * owner, `ownerUser`). Nobody flips for another player, even with owner
+ * owner, `ownerUserOf`). Nobody flips for another player, even with owner
  * rights on their actor, and an NPC is the Director's alone. The board's
  * Flip button, the chat card's and `flip` itself all ask this — and so does
  * the row's name/Edit button, which is the same question, so it stays one
  * rule rather than growing a twin.
  */
 export const canFlipFor = (actor, user = game.user) =>
-  !!actor && (user.isGM || actor.ownerUser?.id === user.id);
+  !!actor && (user.isGM || ownerUserOf(actor)?.id === user.id);
 
 /** Actor ids with a flip in flight on THIS client. */
 const flipping = new Set();
@@ -40,7 +41,8 @@ const OUTCOME_TEXT = {
  *
  * The Director and the row's player may both press Flip. Both roll, but the
  * write carries the challenge token (`issuedAt`) it was rolled against and
- * `PDActor._preUpdate` refuses one that is stale on the writer's client, so a
+ * the `preUpdateActor` hook (actor.js) refuses one that is stale on the
+ * writer's client, so a
  * flip that lost the race by any visible margin costs a chat card and never a
  * penny. Two writes inside the same round trip can still both land; the
  * Director's minus fixes the rare double.
@@ -91,7 +93,7 @@ export const flip = async (actor) => {
     // speaks by that sentence alone, so nothing that filters messages by who
     // owns the speaker applies to it.
     const title = t(pluralKey(n, { one: "PD.Chat.FlavorOne", other: "PD.Chat.Flavor" }), { name: actor.name, n, ds });
-    const speaker = actor.type === "character"
+    const speaker = actor.type === TYPE_PC
       ? { ...foundry.documents.ChatMessage.getSpeaker({ actor }), alias: title }
       : { alias: title };
     message = await roll.toMessage({

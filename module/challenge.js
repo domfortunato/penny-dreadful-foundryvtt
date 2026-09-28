@@ -1,4 +1,5 @@
-import { MAX_DS, TEMPLATES, t } from "./constants.js";
+import { MAX_DS, TEMPLATES, TYPE_NPC, TYPE_PC, t } from "./constants.js";
+import { ownerUserOf } from "./actor.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { postFlipRequest, withdrawRequests } from "./request.js";
 import { getSpotlight, setSpotlight } from "./spotlight.js";
@@ -58,13 +59,13 @@ export const removePenny = async (actor) => {
  * words differ. Full keys, written out, so the i18n gate can see them.
  */
 const ADD_LABELS = {
-  character: {
+  [TYPE_PC]: {
     title: "PD.Dialog.AddCharacterTitle",
     pick: "PD.Dialog.AddCharacterPick",
     none: "PD.Dialog.AddCharacterNone",
     create: "PD.Dialog.AddCharacterNew",
   },
-  npc: {
+  [TYPE_NPC]: {
     title: "PD.Dialog.AddNpcTitle",
     pick: "PD.Dialog.AddNpcPick",
     none: "PD.Dialog.AddNpcNone",
@@ -86,7 +87,7 @@ export const addToBoard = async (type) => {
     .filter((a) => a.type === type && !a.system.onBoard)
     .sort(byName)
     .map((a) => {
-      const player = a.ownerUser;
+      const player = ownerUserOf(a);
       return {
         id: a.id,
         label: player && player.name !== a.name
@@ -134,7 +135,7 @@ export const removeFromBoard = async (actor) => {
   if (!isDirector() || !actor) return;
   const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: {
-      title: actor.type === "npc" ? "PD.Dialog.RemoveNpcTitle" : "PD.Dialog.RemovePcTitle",
+      title: actor.type === TYPE_NPC ? "PD.Dialog.RemoveNpcTitle" : "PD.Dialog.RemovePcTitle",
       icon: "fa-solid fa-user-slash",
     },
     classes: ["penny-dreadful", "pd-dialog"],

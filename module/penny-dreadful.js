@@ -2,9 +2,9 @@
  * Penny Dreadful for Foundry VTT. Hook wiring only; everything else lives in
  * the module it is named after.
  */
-import { SYSTEM_ID, TEMPLATES, log } from "./constants.js";
+import { SYSTEM_ID, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
 import { ACTOR_DATA_MODELS } from "./data-models.js";
-import { PDActor, registerDirectoryHooks } from "./actor.js";
+import { registerActorHooks, registerDirectoryHooks } from "./actor.js";
 import { PDActorSheet } from "./sheet.js";
 import { registerKeybindings, registerSettings } from "./settings.js";
 
@@ -19,10 +19,13 @@ import { openScoreboard, registerSceneControl, registerScoreboardHooks } from ".
 
 Hooks.once("init", () => {
   log("init");
-  CONFIG.Actor.documentClass = PDActor;
-  CONFIG.Actor.dataModels = ACTOR_DATA_MODELS;
+  // Merge, never replace: the system owns the whole map today, but the
+  // planned module build registers beside a host system's models, and the
+  // stock Actor class serves both (`preUpdateActor` in actor.js carries
+  // what the PDActor subclass used to).
+  Object.assign(CONFIG.Actor.dataModels, ACTOR_DATA_MODELS);
   foundry.documents.collections.Actors.registerSheet(SYSTEM_ID, PDActorSheet, {
-    types: ["character", "npc"],
+    types: [TYPE_PC, TYPE_NPC],
     makeDefault: true,
     label: "PD.Sheet.Label",
   });
@@ -38,6 +41,7 @@ Hooks.once("init", () => {
   registerPlayerHooks();
   registerJournalHooks();
   registerDirectoryHooks();
+  registerActorHooks();
 
   foundry.applications.handlebars.loadTemplates(Object.values(TEMPLATES));
 });

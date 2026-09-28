@@ -11,6 +11,14 @@ export const NPC_MAX_PENNIES_MIN = 5;
 export const NPC_MAX_PENNIES_DEFAULT = 5;
 /** The Difficulty Score runs from 1 to 5, as the rules say. Fixed; not a setting. */
 export const MAX_DS = 5;
+/**
+ * The two actor sub-types, everywhere a type is compared, created or
+ * registered. Bare names in the system build; the planned module build
+ * prefixes them with its package id, which is why no literal appears
+ * outside this file.
+ */
+export const TYPE_PC = "character";
+export const TYPE_NPC = "npc";
 
 export const TEMPLATES = {
   scoreboard: `systems/${SYSTEM_ID}/templates/scoreboard.html`,
