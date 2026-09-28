@@ -6,10 +6,10 @@ one, writes the section into the release tag, and the Release Creation workflow
 creates the release with it. `npm run release X.Y.Z -- --dry-run` shows the exact
 body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 
-## Unreleased
+## 0.3.0
 
-- Internal restructuring toward the module build (no player-visible change): the system no longer subclasses Actor — its update guards run as a hook, its data models merge into Foundry's map instead of replacing it, and the actor type names live in one constants file
-- The repo now also carries the mini-game module flavor (id penny-dreadful-module): the same source boots as this system or as a module inside another system's world, one release versions both manifests, and the checks gate both. As a guest the module behaves itself: the Director starts and ends the mini game with the toolbar's coin button (the board opens and closes on every screen, and stays an ordinary closable window), characters are not auto-created unless the Director turns that on, its one-shot reset deletes only the mini game's own chat messages, and the host's GM labels are never touched. The module is not distributed yet — its release pipeline is still to come
+- Penny Dreadful now also ships as a mini-game **module** (id penny-dreadful-module), for running a one-shot interlude inside any other system's world. Enable it in a world and the Referee starts and ends the mini game with the coin button in the token toolbar: the scoreboard opens on every screen and closes everywhere when the interlude ends. As a guest the module behaves itself — the board is an ordinary closable window (Alt+B reopens it), no characters are created unless that is turned on in its settings, its "new one-shot" reset deletes only the mini game's own actors and chat messages, its PCs and NPCs appear in the Actors tab as clearly labelled types beside the host's (which are never tagged or touched), and the host's GM labels stay its own. Install it from Setup → Add-on Modules: https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
+- Internal restructuring for the split (no change to how the system plays): the system no longer subclasses Actor — its update guards run as a hook, its data models merge into Foundry's map instead of replacing it, and the actor type names live in one constants file. One release now versions both packages, and each GitHub repo builds only its own flavor from the shared tag
 
 ## 0.2.1
 
