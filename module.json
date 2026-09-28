@@ -2,7 +2,7 @@
   "id": "penny-dreadful-module",
   "title": "Penny Dreadful (Mini Game)",
   "description": "A horror-movie game with one mechanic: flip your pennies — as a mini game inside any other system's world, for a one-shot interlude on its own scoreboard that leaves the host campaign untouched. The game rules are by Daniel Fitzpatrick (CC BY-SA 4.0); this Foundry VTT module is an independent adaptation he is not involved in.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "compatibility": {
     "minimum": "14.365",
     "verified": "14.367"
