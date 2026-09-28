@@ -266,6 +266,16 @@ junction to this folder; the local 14.365 app runs on :30000.
   never another player with owner rights, and an NPC only the Director. The
   server cannot enforce it (no socket); a player could still write their own
   actor from the console, which the board shows.
+- A CHARACTER'S NAME (PC or NPC) IS AT MOST 25 CHARACTERS — Dom's rule
+  for all three Penny Dreadful repos (system, module, and the web table
+  in `../penny-dreadful-table`), 2026-09-28. `NAME_MAX` / `clampName` in
+  constants.js (characters, not UTF-16 units, trimmed). Our sheet's name
+  field and the add dialog carry `maxlength`; the safety net is a
+  `preCreateActor` (updateSource) and `preUpdateActor` (changes.name) hook
+  pair in actor.js, so core's create dialog, the sidebar rename and the
+  auto-created PC named after a long user name are cut too. OUR TYPES
+  ONLY: the module smoke proves a host actor keeps a longer name. Actors
+  named before the rule keep their name until it is next edited.
 - A notice passes the KEY plus `{format: {...}}` to `ui.notifications.*`,
   never a string pre-formatted with `t()`: for a known key core escapes the
   format values and skips `cleanHTML` (notifications.mjs:108-122), where a

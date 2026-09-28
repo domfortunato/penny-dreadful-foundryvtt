@@ -1,6 +1,8 @@
-import { TYPE_NPC, TYPE_PC, t } from "./constants.js";
+import { TYPE_NPC, TYPE_PC, clampName, t } from "./constants.js";
 
 const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
+
+const isOurs = (actor) => actor?.type === TYPE_PC || actor?.type === TYPE_NPC;
 
 /**
  * The player whose row this is: the first non-GM user with an explicit OWNER
@@ -34,6 +36,21 @@ export const ownerUserOf = (actor) => {
  * we meet) skips hooks — none of those touch dead, onBoard or pdFlip.
  */
 export const registerActorHooks = () => {
+  // NAME_MAX, for OUR types only: a host system's actors are never touched.
+  // Covers every route a name arrives by — our sheet and add dialog, the
+  // auto-created PC named after its player, core's create dialog and the
+  // sidebar rename. preCreate may change the source; a preUpdate hook's
+  // changes are re-cleaned after it, so the trimmed name is what is written.
+  Hooks.on("preCreateActor", (actor) => {
+    if (!isOurs(actor)) return;
+    const name = clampName(actor.name);
+    if (name && name !== actor.name) actor.updateSource({ name });
+  });
+  Hooks.on("preUpdateActor", (actor, changes) => {
+    if (!isOurs(actor) || typeof changes.name !== "string") return;
+    const name = clampName(changes.name);
+    if (name && name !== changes.name) changes.name = name;
+  });
   Hooks.on("preUpdateActor", (actor, changes, options, userId) => {
     const dying = foundry.utils.getProperty(changes, "system.dead") === true;
     const leaving = foundry.utils.getProperty(changes, "system.onBoard") === false;

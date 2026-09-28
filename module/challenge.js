@@ -1,4 +1,4 @@
-import { MAX_DS, TEMPLATES, TYPE_NPC, TYPE_PC, t } from "./constants.js";
+import { MAX_DS, NAME_MAX, TEMPLATES, TYPE_NPC, TYPE_PC, t } from "./constants.js";
 import { ownerUserOf } from "./actor.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { postFlipRequest, withdrawRequests } from "./request.js";
@@ -95,7 +95,7 @@ export const addToBoard = async (type) => {
           : a.name,
       };
     });
-  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addActor, { candidates, labels });
+  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addActor, { candidates, labels, nameMax: NAME_MAX });
   const result = await foundry.applications.api.DialogV2.wait({
     window: { title: labels.title, icon: "fa-solid fa-user-plus" },
     classes: ["penny-dreadful", "pd-dialog"],

@@ -1,4 +1,4 @@
-import { TEMPLATES, TYPE_NPC, warn } from "./constants.js";
+import { NAME_MAX, TEMPLATES, TYPE_NPC, warn } from "./constants.js";
 import { ownerUserOf } from "./actor.js";
 import { assignPlayer } from "./players.js";
 
@@ -26,6 +26,7 @@ export class PDActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const actor = this.document;
     context.isNpc = actor.type === TYPE_NPC;
+    context.nameMax = NAME_MAX;
     context.isDirector = game.user.isGM;
     context.playerName = ownerUserOf(actor)?.name ?? null;
     context.system = actor.system;

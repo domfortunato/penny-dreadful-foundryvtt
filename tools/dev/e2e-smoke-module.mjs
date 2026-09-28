@@ -255,6 +255,23 @@ try {
   }, MODULE_ID);
   ok(`host keepsakes created (a "${hostBaseline.hostType}" actor and a chat message)`);
 
+  // Dom's rule — a character's name is at most 25 characters — holds for
+  // OUR types, and a guest never trims a host actor's name.
+  const nameCap = await gm.evaluate(async ({ id, hostType }) => {
+    const long = "Bartholomew Montgomery-Smythe"; // 29
+    const npc = await foundry.documents.Actor.create({ name: long, type: `${id}.npc` });
+    const ours = npc.name;
+    await npc.update({ name: `${long} the Third` });
+    const renamed = npc.name;
+    const host = await foundry.documents.Actor.create({ name: long, type: hostType });
+    const hosts = host.name;
+    await foundry.documents.Actor.deleteDocuments([npc.id, host.id]);
+    return { ours, renamed, hosts };
+  }, { id: MODULE_ID, hostType: hostBaseline.hostType });
+  check(nameCap.ours === "Bartholomew Montgomery-Sm" && nameCap.renamed === "Bartholomew Montgomery-Sm",
+    `our characters' names are cut to 25 on create and rename (${nameCap.ours} / ${nameCap.renamed})`);
+  check(nameCap.hosts === "Bartholomew Montgomery-Smythe", `a host actor keeps its full name (${nameCap.hosts})`);
+
   await gm.evaluate(async () => {
     if (!game.users.getName("Bob")) await foundry.documents.User.create({ name: "Bob", role: 1 });
   });

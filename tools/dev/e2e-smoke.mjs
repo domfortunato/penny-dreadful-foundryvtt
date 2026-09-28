@@ -136,6 +136,20 @@ try {
   check(s1.roleLabel === "The Director", `GM role label is "${s1.roleLabel}"`);
   check(s1.gmUserNames.includes("The Director"), `GM user renamed: ${s1.gmUserNames.join(", ")}`);
   check(s1.boardRendered && s1.boardInDom, "scoreboard rendered and in the DOM");
+
+  // Dom's rule: a character's name is at most 25 characters, whatever the
+  // route (the create below is core's own API, not our dialog).
+  const nameCap = await gm.evaluate(async () => {
+    const long = "Bartholomew Montgomery-Smythe"; // 29
+    const npc = await foundry.documents.Actor.create({ name: long, type: "npc" });
+    const created = npc.name;
+    await npc.update({ name: `${long} the Third` });
+    const updated = npc.name;
+    await npc.delete();
+    return { created, updated };
+  });
+  check(nameCap.created === "Bartholomew Montgomery-Sm" && nameCap.updated === "Bartholomew Montgomery-Sm",
+    `a character's name is cut to 25 on create and on rename (${JSON.stringify(nameCap)})`);
   check(!s1.closeButton, "scoreboard has no close button");
   check(s1.minimizable === false, "scoreboard is not minimizable");
   check(s1.rulesPack && s1.rulesIndex === 2, `rules pack present with ${s1.rulesIndex} entries (rules and odds)`);

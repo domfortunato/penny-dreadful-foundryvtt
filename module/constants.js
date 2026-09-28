@@ -42,6 +42,15 @@ export const NPC_MAX_PENNIES_DEFAULT = 5;
 /** The Difficulty Score runs from 1 to 5, as the rules say. Fixed; not a setting. */
 export const MAX_DS = 5;
 /**
+ * A character's name, PC or NPC, is at most 25 characters (Dom's rule for
+ * all three Penny Dreadful repos, 2026-09-28). Counted in characters, not
+ * UTF-16 units, so an accented or emoji name gets its full 25. The inputs
+ * carry maxlength; `clampName` is the safety net every write passes through
+ * (the preCreateActor / preUpdateActor hooks in actor.js).
+ */
+export const NAME_MAX = 25;
+export const clampName = (name) => Array.from(String(name ?? "").trim()).slice(0, NAME_MAX).join("");
+/**
  * The two actor sub-types, everywhere a type is compared, created or
  * registered. Bare names in the system build; core keys a module's sub-types
  * as `<module-id>.<subtype>`, which is why no literal appears outside this
