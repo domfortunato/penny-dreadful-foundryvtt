@@ -37,7 +37,10 @@ const actorFrom = (target) => game.actors.get(target.closest("[data-actor-id]")?
 export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "pd-scoreboard",
-    classes: ["penny-dreadful", "pd-scoreboard"],
+    // `pd-board-fixed` marks the SYSTEM's board, the one that never closes:
+    // the stylesheet hides the close control only there. The module's board
+    // keeps a visible X (seventh review: an unscoped rule hid it too).
+    classes: ["penny-dreadful", "pd-scoreboard", ...(IS_MODULE ? [] : ["pd-board-fixed"])],
     tag: "div",
     window: {
       title: "PD.Board.Title",
@@ -63,6 +66,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       addNpc: PDScoreboard.#onAddNpc,
       removeFromBoard: PDScoreboard.#onRemoveFromBoard,
       newOneShot: PDScoreboard.#onNewOneShot,
+      toggleMiniGame: PDScoreboard.#onToggleMiniGame,
       openSheet: PDScoreboard.#onOpenSheet,
     },
   };
@@ -193,6 +197,11 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       // The module's one-shot reset touches only its own messages, and its
       // tooltip must not promise the host's chat log.
       oneShotTooltip: IS_MODULE ? "PD.Board.NewOneShotModule" : "PD.Board.NewOneShot",
+      // Module only: the Director's Start/End for the whole table, on the
+      // board itself — the scene-control coin is dead without a canvas.
+      miniGameControl: IS_MODULE && isDirector && canSetWorld(),
+      miniGameOn: miniGameActive(),
+      miniGameTooltip: miniGameActive() ? "PD.Board.MiniGameEnd" : "PD.Board.MiniGameStart",
       // The spotlight is a world setting: its controls show only to a Director who may write it.
       canSpotlight: isDirector && canSetWorld(),
       // Only when Dice So Nice happens to be active; never required.
@@ -323,6 +332,10 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     await startNewOneShot();
   }
 
+  static async #onToggleMiniGame() {
+    await setMiniGame(!miniGameActive());
+  }
+
   static #onOpenSheet(event, target) {
     const actor = actorFrom(target);
     if (canFlipFor(actor)) renderFromBoard(actor.sheet);
@@ -363,10 +376,28 @@ export const miniGameActive = () => {
   }
 };
 
-/** The toggle's onChange, on every client: the board follows the setting. */
+/**
+ * Start or end the mini game (module flavor, a Director who may write world
+ * settings). Three doors lead here, because the scene-control coin is dead
+ * whenever the canvas is not ready (no active scene, or the canvas disabled —
+ * core's SceneControls ignores every tool click then): the coin, the
+ * Start/End button on the board's toolbar (the board opens with Alt+B at any
+ * time), and the setting itself in Configure Settings.
+ */
+export const setMiniGame = async (active) => {
+  if (!IS_MODULE || !canSetWorld() || miniGameActive() === active) return;
+  await game.settings.set(NS, "miniGameActive", active);
+};
+
+/**
+ * The setting's onChange, on every client: the board follows it, and the
+ * coin's pressed state is re-read (a reset render re-runs
+ * getSceneControlButtons, where `active` is taken from the setting).
+ */
 export const onMiniGameToggled = (active) => {
   if (active) openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
   else if (scoreboard?.rendered) scoreboard.close({ force: true }).catch((err) => warn("the scoreboard failed to close:", err));
+  ui.controls?.render({ reset: true });
 };
 
 /** Redraw soon. Debounced: a flip touches several documents in a row. */
@@ -398,37 +429,47 @@ export const registerScoreboardHooks = () => {
 };
 
 /**
- * A toolbar button under Token controls. In the system it reopens a board
- * that was somehow lost. In the module it is the Director's mini-game
- * TOGGLE — start it and every client's board opens, end it and they all
- * close — while a player's button just reopens their own closed board.
- * `tools` is a record keyed by name; `visible` is read once at first render.
+ * A tool under Token controls. In the system it is a button that reopens a
+ * board that was somehow lost. In the module, for a Director who may write
+ * world settings, it is a TOGGLE whose pressed state IS the mini game (core
+ * draws `active`; onChange gets the new state) — a stateless button flipped
+ * the setting blind, so a Director who closed their own board and clicked
+ * to get it back ended the game for everyone. A player's is a button that
+ * reopens their own board. A tool may not be both toggle and button.
+ * Scene-control tools only work while the canvas is ready — see setMiniGame
+ * for the other two ways in.
  */
 export const registerSceneControl = () => {
   Hooks.on("getSceneControlButtons", (controls) => {
     const tools = controls?.tokens?.tools;
     if (!tools) return;
     const gmToggle = IS_MODULE && game.user.isGM && canSetWorld();
-    // In a host campaign the button must say WHOSE board this is (Dom's
+    // In a host campaign the tool must say WHOSE board this is (Dom's
     // ruling: the tooltip names Penny Dreadful); in our own system the
     // plain "Scoreboard" is the whole world's one board.
-    tools.pdScoreboard = {
+    const common = {
       name: "pdScoreboard",
-      title: gmToggle ? "PD.Controls.MiniGame"
-        : IS_MODULE ? "PD.Controls.ScoreboardModule"
-          : "PD.Controls.Scoreboard",
       icon: "fa-solid fa-coins",
       order: Object.keys(tools).length,
-      button: true,
       visible: true,
-      onChange: () => {
-        if (gmToggle) {
-          game.settings.set(NS, "miniGameActive", !miniGameActive())
-            .catch((err) => warn("the mini-game toggle failed:", err));
-        } else {
-          openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
-        }
-      },
     };
+    tools.pdScoreboard = gmToggle
+      ? {
+        ...common,
+        title: "PD.Controls.MiniGame",
+        toggle: true,
+        active: miniGameActive(),
+        onChange: (event, active) => {
+          setMiniGame(active).catch((err) => warn("the mini-game toggle failed:", err));
+        },
+      }
+      : {
+        ...common,
+        title: IS_MODULE ? "PD.Controls.ScoreboardModule" : "PD.Controls.Scoreboard",
+        button: true,
+        onChange: () => {
+          openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
+        },
+      };
   });
 };

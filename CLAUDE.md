@@ -274,8 +274,39 @@ junction to this folder; the local 14.365 app runs on :30000.
   `preCreateActor` (updateSource) and `preUpdateActor` (changes.name) hook
   pair in actor.js, so core's create dialog, the sidebar rename and the
   auto-created PC named after a long user name are cut too. OUR TYPES
-  ONLY: the module smoke proves a host actor keeps a longer name. Actors
-  named before the rule keep their name until it is next edited.
+  ONLY: the module smoke proves a host actor keeps a longer name. The
+  create clamp also trims `prototypeToken.name` (core copied the full name
+  there in `_initializeSource`, before the hook) when it equals the actor's
+  name. An actor named before the rule keeps its name until its sheet is
+  next saved (the sheet submits the whole form, name included). The inputs'
+  `maxlength` counts UTF-16 units, so emoji stop typing early; clampName,
+  counting characters, is the rule.
+- SEVENTH REVIEW (2026-09-28, the module work) — guest manners it added:
+  - SCENE-CONTROL TOOLS ARE DEAD WITHOUT A READY CANVAS (client
+    scene-controls.mjs:593 `if (!canvas.ready) return` before any tool
+    runs): no active scene, or the canvas disabled, and the coin does
+    nothing. So the Director has three ways to start/end the mini game,
+    all through `setMiniGame` (scoreboard.js): the coin (a TOGGLE whose
+    `active` is the setting; `onMiniGameToggled` re-renders the controls
+    with `{reset: true}` so it follows), the power button on the board's
+    toolbar (Alt+B opens the board with the game off), and the setting,
+    now `config: true` in Configure Settings.
+  - A MODULE'S TRANSLATIONS MERGE AFTER THE SYSTEM'S (client
+    localization.mjs:292-319), so any key the module shares with a host
+    overwrites the host's. The bare `TYPES.Actor.character`/`npc` labels
+    live in `lang/en-system.json`, which only system.json loads;
+    manifest-check fails if the module ever declares a `*-system.json`,
+    and ESLint's identical-keys rule is off for those files only.
+  - The system board's hidden close control is scoped to its own class,
+    `pd-board-fixed`; the module's board shows its X.
+  - The module never writes `user.character` (core would speak a host
+    player's ordinary chat as the mini-game PC); the system still keeps
+    the pointer in step.
+  - Every actor hook of ours starts with `isOurs(actor)`.
+  - The module stands down at init in a Penny Dreadful SYSTEM world, with
+    a GM notice (`relationships.conflicts` is schema only in 14.365).
+  - The one-shot confirm is whole-sentence keys, one plural choice per
+    count, and promises fresh characters only while auto-create is on.
 - A notice passes the KEY plus `{format: {...}}` to `ui.notifications.*`,
   never a string pre-formatted with `t()`: for a known key core escapes the
   format values and skips `cleanHTML` (notifications.mjs:108-122), where a

@@ -13,14 +13,16 @@
  *      refuses without them, so a release can never be published with an empty body
  *   5. prints the commits since the last tag and the notes, so you see what you are
  *      shipping and what the release page will say
- *   6. bumps `version` in system.json (minimal, single-line edit)
+ *   6. bumps `version` in BOTH system.json and module.json (minimal, single-line
+ *      edits — one tag builds both flavors)
  *   7. commits "Release X.Y.Z", creates an annotated tag whose BODY is the notes,
  *      and pushes the branch + tag to `origin`
  *
  * The tag originates on `origin` (Gitea), so the Gitea->GitHub push mirror PROTECTS
  * it instead of pruning it — that pruning was the whole reason releases used to
  * vanish. Once the tag reaches GitHub, the "Release Creation" workflow triggers on
- * the tag push, builds + publishes the release with system.json + system.zip, and
+ * the tag push in EACH mirror target and builds that repo's flavor — system.json +
+ * system.zip in the system repo, module.json + module.zip in the module repo — and
  * reads the notes back out of the tag for the release body — the notes land in the
  * same call that attaches the assets, nothing is pasted afterwards. The mirror
  * carries the tag OBJECT, not just the ref (every tag on GitHub lists a peeled `^{}`
@@ -160,12 +162,15 @@ console.log(`
 ✓ Release ${version} pushed to origin, notes and all.
 
 Next:
-  1. If origin mirrors to GitHub, make sure the mirror has synced (the tag must
-     reach GitHub). The "Release Creation" workflow triggers on the tag push and
-     builds + publishes the release with system.json + system.zip, its body read
-     from the tag (~1-2 min; watch the Actions tab).
-  2. Verify the install manifest returns 200:
-     https://github.com/<owner>/<repo>/releases/latest/download/system.json
+  1. Make sure BOTH push mirrors have synced (the tag must reach both GitHub
+     repos). In each, the "Release Creation" workflow triggers on the tag push
+     and builds that repo's flavor — system.json + system.zip in
+     penny-dreadful-foundryvtt, module.json + module.zip in
+     penny-dreadful-module-foundryvtt — its body read from the tag (~1-2 min;
+     watch both Actions tabs).
+  2. Verify BOTH install manifests return 200 and read ${version}:
+     https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.json
+     https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
   3. Sync the development branch, or the next merge conflicts on the version bump
      this commit just made:
          git checkout dev && git merge master && git push origin dev

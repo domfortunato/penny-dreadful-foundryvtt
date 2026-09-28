@@ -261,16 +261,29 @@ try {
     const long = "Bartholomew Montgomery-Smythe"; // 29
     const npc = await foundry.documents.Actor.create({ name: long, type: `${id}.npc` });
     const ours = npc.name;
+    const token = npc.prototypeToken.name;
     await npc.update({ name: `${long} the Third` });
     const renamed = npc.name;
     const host = await foundry.documents.Actor.create({ name: long, type: hostType });
     const hosts = host.name;
     await foundry.documents.Actor.deleteDocuments([npc.id, host.id]);
-    return { ours, renamed, hosts };
+    return { ours, token, renamed, hosts };
   }, { id: MODULE_ID, hostType: hostBaseline.hostType });
   check(nameCap.ours === "Bartholomew Montgomery-Sm" && nameCap.renamed === "Bartholomew Montgomery-Sm",
     `our characters' names are cut to 25 on create and rename (${nameCap.ours} / ${nameCap.renamed})`);
+  check(nameCap.token === "Bartholomew Montgomery-Sm", `the prototype token's name is cut with it (${nameCap.token})`);
   check(nameCap.hosts === "Bartholomew Montgomery-Smythe", `a host actor keeps its full name (${nameCap.hosts})`);
+
+  // Guest manners (seventh review): the host's own type labels survive our
+  // lang file, and the mini-game switch is reachable without a canvas.
+  const manners = await gm.evaluate((id) => ({
+    hostPc: game.i18n.localize("TYPES.Actor.character"),
+    hostNpc: game.i18n.localize("TYPES.Actor.npc"),
+    settingShown: game.settings.settings.get(`${id}.miniGameActive`)?.config === true,
+  }), MODULE_ID);
+  check(manners.hostPc === "Player Character" && manners.hostNpc === "Non-Player Character",
+    `the host's own actor type labels are untouched (${manners.hostPc} / ${manners.hostNpc})`);
+  check(manners.settingShown, "the mini-game switch is in Configure Settings (the coin is dead without a canvas)");
 
   await gm.evaluate(async () => {
     if (!game.users.getName("Bob")) await foundry.documents.User.create({ name: "Bob", role: 1 });
@@ -289,17 +302,40 @@ try {
   /* ------------------------------------------------ stage 4: the toggle */
   console.log("\nStage 4: the mini-game toggle");
   const tool = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard ?? null);
-  if (tool) check(tool.title === "PD.Controls.MiniGame", `the Director's scene-control button is the toggle (${tool.title})`);
-  else note("no scene controls without a canvas; the toggle registration is exercised via the setting");
+  if (tool) {
+    check(tool.title === "PD.Controls.MiniGame" && tool.toggle === true && !tool.button && tool.active === false,
+      `the Director's coin is an on/off toggle showing OFF (${JSON.stringify({ toggle: tool.toggle, active: tool.active })})`);
+  } else note("no scene controls without a canvas; the game is started from the board, as a Director would");
 
-  await gm.evaluate((id) => game.settings.set(id, "miniGameActive", true), MODULE_ID);
+  // No canvas needed: Alt+B opens the Director's own board while the game is
+  // off, and its power button starts the game for everyone.
+  await gm.keyboard.press("Alt+KeyB");
+  await gm.waitForFunction(() => !!document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]'), null, { timeout: 10000 })
+    .then(() => ok("with the game off, Alt+B opens the Director's board with a Start button"))
+    .catch(() => fail("with the game off, Alt+B opens the Director's board with a Start button"));
+  check(!(await boardRendered(bob)), "Bob's board stays shut until the game starts");
+  await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]').click());
+  await gm.waitForFunction((id) => game.settings.get(id, "miniGameActive") === true, MODULE_ID, { timeout: 10000 })
+    .then(() => ok("the board's power button started the mini game")).catch(() => fail("the board's power button started the mini game"));
   await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
-    .then(() => ok("toggle on: the board opened for the Director")).catch(() => fail("toggle on: the board opened for the Director"));
+    .then(() => ok("toggle on: the board is open for the Director")).catch(() => fail("toggle on: the board is open for the Director"));
   await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
     .then(() => ok("toggle on: the board opened for Bob")).catch(() => fail("toggle on: the board opened for Bob"));
+  await gm.waitForFunction(
+    () => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]')?.getAttribute("aria-pressed") === "true",
+    null, { timeout: 5000 },
+  ).then(() => ok("the power button now reads as End")).catch(() => fail("the power button now reads as End"));
+  const toolOn = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard?.active ?? null);
+  if (toolOn !== null) check(toolOn === true, "the coin's pressed state followed the setting");
 
-  check(await gm.evaluate(() => !!document.getElementById("pd-scoreboard")?.querySelector('.header-control[data-action="close"]')),
-    "the module's board keeps its close button");
+  const closeX = await gm.evaluate(() => {
+    const x = document.getElementById("pd-scoreboard")?.querySelector('.header-control[data-action="close"]');
+    if (!x) return null;
+    const r = x.getBoundingClientRect();
+    return { display: getComputedStyle(x).display, width: r.width, height: r.height };
+  });
+  check(closeX && closeX.display !== "none" && closeX.width > 0 && closeX.height > 0,
+    `the module's board shows its close button (${JSON.stringify(closeX)})`);
   await bob.evaluate(() => foundry.applications.instances.get("pd-scoreboard").close());
   await bob.waitForTimeout(500);
   check(!(await boardRendered(bob)), "Bob can close his board");
@@ -308,7 +344,7 @@ try {
   await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
     .then(() => ok("Alt+B brings Bob's board back")).catch(() => fail("Alt+B brings Bob's board back"));
 
-  await gm.evaluate((id) => game.settings.set(id, "miniGameActive", false), MODULE_ID);
+  await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]').click());
   await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
     .then(() => ok("toggle off: the board closed for the Director")).catch(() => fail("toggle off: the board closed for the Director"));
   await bob.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
@@ -336,6 +372,23 @@ try {
     .catch(() => fail("a PC added from the board carries the namespaced type and a row"));
 
   const pcId = await gm.evaluate(() => game.actors.getName("Module Smoke PC")?.id ?? null);
+
+  // Handing a PC to a player must not make it their HOST primary character
+  // (core would speak their ordinary host chat as it). The module's own
+  // assignPlayer, imported from its URL — the same instance the board uses.
+  const pointer = await gm.evaluate(async ({ id, pcId }) => {
+    const { assignPlayer } = await import(`/modules/${id}/module/players.js`);
+    const bob = game.users.getName("Bob");
+    const before = bob.character?.id ?? null;
+    await assignPlayer(game.actors.get(pcId), bob.id);
+    return {
+      before,
+      after: game.users.getName("Bob").character?.id ?? null,
+      owner: game.actors.get(pcId).ownership[bob.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
+    };
+  }, { id: MODULE_ID, pcId });
+  check(pointer.owner, "the Director handed the PC to Bob");
+  check(pointer.after === pointer.before, `Bob's host primary character is untouched (${pointer.before} → ${pointer.after})`);
   await gm.evaluate((id) => {
     document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button[data-action="issueChallenge"][data-ds="1"]`).click();
   }, pcId);

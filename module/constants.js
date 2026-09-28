@@ -43,10 +43,11 @@ export const NPC_MAX_PENNIES_DEFAULT = 5;
 export const MAX_DS = 5;
 /**
  * A character's name, PC or NPC, is at most 25 characters (Dom's rule for
- * all three Penny Dreadful repos, 2026-09-28). Counted in characters, not
- * UTF-16 units, so an accented or emoji name gets its full 25. The inputs
- * carry maxlength; `clampName` is the safety net every write passes through
- * (the preCreateActor / preUpdateActor hooks in actor.js).
+ * all three Penny Dreadful repos, 2026-09-28). `clampName` is the rule: it
+ * counts characters (code points), not UTF-16 units, and every write passes
+ * through it (the preCreateActor / preUpdateActor hooks in actor.js). The
+ * inputs' maxlength is only typing comfort, and counts UTF-16 units, so an
+ * emoji costs two there — a name of emoji stops typing early in the field.
  */
 export const NAME_MAX = 25;
 export const clampName = (name) => Array.from(String(name ?? "").trim()).slice(0, NAME_MAX).join("");

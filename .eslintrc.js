@@ -25,4 +25,13 @@ module.exports = {
     "i18n-json/identical-keys": [2, { filePath: path.resolve("lang/en.json") }],
     "no-return-await": "error",
   },
+  overrides: [
+    {
+      // lang/*-system.json are not translations of en.json but a
+      // supplement only system.json loads (keys a module must never set —
+      // see tools/dev/manifest-check.mjs); identical-keys cannot apply.
+      files: ["lang/*-system.json"],
+      rules: { "i18n-json/identical-keys": 0 },
+    },
+  ],
 };

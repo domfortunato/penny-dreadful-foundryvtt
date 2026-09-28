@@ -759,6 +759,11 @@ try {
   const npcActorsBefore = await gm.evaluate(() => game.actors.filter((a) => a.type === "npc").length);
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="newOneShot"]').click());
   await gm.waitForFunction(() => !!([...document.querySelectorAll(".pd-dialog")].pop()?.querySelector('button[data-action="yes"]')), null, { timeout: 10000 });
+  // The confirm says only what this reset will do (seventh review): with
+  // auto-create on here, the fresh character is promised; no host campaign.
+  const oneShotText = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop().querySelector(".window-content")?.textContent ?? "");
+  check(/fresh character is created/.test(oneShotText) && !/host campaign/.test(oneShotText) && /PCs? (is|are) deleted/.test(oneShotText),
+    `the one-shot confirm matches what the reset does (${oneShotText.replace(/\s+/g, " ").trim().slice(0, 160)})`);
   await gm.evaluate(() => { [...document.querySelectorAll(".pd-dialog")].pop().querySelector('button[data-action="yes"]').click(); });
   // Settled means: chat empty, the fresh row created AND rendered, and the
   // spotlight's end state "" (the delete-advance race may write in between).

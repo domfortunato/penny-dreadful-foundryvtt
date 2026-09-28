@@ -44,7 +44,14 @@ export const registerActorHooks = () => {
   Hooks.on("preCreateActor", (actor) => {
     if (!isOurs(actor)) return;
     const name = clampName(actor.name);
-    if (name && name !== actor.name) actor.updateSource({ name });
+    if (!name || name === actor.name) return;
+    // Core copied the full name into the prototype token before this hook
+    // ran (Actor#_initializeSource, and again in Actor#_preCreate), so a
+    // token dragged out later would wear the long name. Trim it too — but
+    // only when it IS the actor's name, never a token name chosen apart.
+    const update = { name };
+    if (actor.prototypeToken?.name === actor.name) update["prototypeToken.name"] = name;
+    actor.updateSource(update);
   });
   Hooks.on("preUpdateActor", (actor, changes) => {
     if (!isOurs(actor) || typeof changes.name !== "string") return;
@@ -52,6 +59,9 @@ export const registerActorHooks = () => {
     if (name && name !== changes.name) changes.name = name;
   });
   Hooks.on("preUpdateActor", (actor, changes, options, userId) => {
+    // Our types only: a host system's actor has no system.challenge (this
+    // threw on one with a system.dead field), and is never ours to touch.
+    if (!isOurs(actor)) return;
     const dying = foundry.utils.getProperty(changes, "system.dead") === true;
     const leaving = foundry.utils.getProperty(changes, "system.onBoard") === false;
     const touchesChallenge = foundry.utils.hasProperty(changes, "system.challenge");

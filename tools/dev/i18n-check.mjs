@@ -11,8 +11,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// The shared file both flavors load, plus the system-only one (the bare
+// type labels a module must never set — see manifest-check.mjs).
 const en = JSON.parse(readFileSync(join(ROOT, "lang", "en.json"), "utf8"));
-const declared = new Set(Object.keys(en));
+const enSystem = JSON.parse(readFileSync(join(ROOT, "lang", "en-system.json"), "utf8"));
+const declared = new Set([...Object.keys(en), ...Object.keys(enSystem)]);
+const inBoth = Object.keys(enSystem).filter((k) => k in en);
 
 const sources = [];
 const walk = (dir) => {
@@ -46,6 +50,10 @@ for (const [doc, types] of Object.entries(moduleManifest.documentTypes ?? {})) {
 for (const pack of moduleManifest.packs ?? []) if (/^PD\./.test(pack.label)) used.add(pack.label);
 
 let failed = false;
+if (inBoth.length) {
+  failed = true;
+  console.error(`  FAIL  in both lang files (belongs only in en-system.json): ${inBoth.join(", ")}`);
+}
 const missing = [...used].filter((k) => !declared.has(k)).sort();
 const orphans = [...declared].filter((k) => !used.has(k)).sort();
 if (missing.length) { failed = true; console.error(`  FAIL  used but not in lang/en.json:\n    ${missing.join("\n    ")}`); }

@@ -61,10 +61,19 @@ const checkManifest = (manifestPath) => {
     if (existsSync(join(ROOT, l.path))) ok(`languages: ${l.path} exists`);
     else fail(`languages[${i}] names "${l.path}", which does not exist`);
   }
+  // `lang/*-system.json` holds keys only the SYSTEM may set — the bare
+  // TYPES.Actor.character/npc labels. A module's translations merge after
+  // the system's (client localization.mjs:292-319), so the module loading
+  // them would overwrite a host system's own type labels (seventh review).
+  const systemOnly = (p) => /-system\.json$/.test(p);
   const onDiskLangs = readdirSync(join(ROOT, "lang")).filter((f) => f.endsWith(".json")).map((f) => `lang/${f}`);
-  const undeclaredLangs = onDiskLangs.filter((p) => !declaredLangs.has(p));
+  const expectedLangs = onDiskLangs.filter((p) => kind === "system" || !systemOnly(p));
+  const undeclaredLangs = expectedLangs.filter((p) => !declaredLangs.has(p));
   if (undeclaredLangs.length) fail(`lang/ files never declared: ${undeclaredLangs.join(", ")}`);
-  else ok(`all ${onDiskLangs.length} lang files are declared`);
+  else ok(`all ${expectedLangs.length} lang files this flavor needs are declared`);
+  if (kind === "module" && [...declaredLangs].some(systemOnly)) {
+    fail("the module declares a system-only lang file: its keys would overwrite a host system's labels");
+  }
 
   /* 2. Link keys ------------------------------------------------------------ */
   for (const key of ["readme", "bugs", "changelog", "manifest", "download", "url"]) {

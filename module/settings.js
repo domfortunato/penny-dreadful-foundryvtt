@@ -21,9 +21,13 @@ export const registerSettings = () => {
     // The Director's mini-game toggle: on opens the board on every client,
     // off closes it everywhere. World-scoped and Director-written like the
     // spotlight; the system flavor has no such setting — its board is
-    // always on. Flipped from the scene-control button (scoreboard.js).
+    // always on. Flipped from the scene-control coin, the board's power
+    // button (setMiniGame in scoreboard.js) — and shown here in Configure
+    // Settings, because the coin is dead while no canvas is ready.
     game.settings.register(NS, "miniGameActive", {
-      scope: "world", config: false, type: Boolean, default: false,
+      name: "PD.Settings.MiniGame.label",
+      hint: "PD.Settings.MiniGame.hint",
+      scope: "world", config: true, type: Boolean, default: false,
       onChange: (active) => onMiniGameToggled(active),
     });
   }

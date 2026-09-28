@@ -1,4 +1,4 @@
-import { NS, TYPE_PC, warn } from "./constants.js";
+import { IS_MODULE, NS, TYPE_PC, warn } from "./constants.js";
 import { ownerUserOf } from "./actor.js";
 
 const creating = new Set();
@@ -28,7 +28,10 @@ export const ensureCharacterFor = async (user, { force = false } = {}) => {
       type: TYPE_PC,
       ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [user.id]: OWNER },
     });
-    if (actor && !user.character) await user.update({ character: actor.id });
+    // The system keeps core's "primary character" in step. The module never
+    // writes it: in a host campaign it would make a mini-game PC the
+    // player's own, and core would speak their host chat as it.
+    if (actor && !IS_MODULE && !user.character) await user.update({ character: actor.id });
     ui.notifications.info("PD.Notify.CharacterCreated", { format: { player: user.name } });
   } catch (err) {
     warn(`could not create a character for ${user.name}:`, err);
@@ -62,6 +65,9 @@ export const assignPlayer = async (actor, userId) => {
   }
   if (chosen) ownership[chosen.id] = OWNER;
   await actor.update({ ownership }, { diff: false, recursive: false });
+  // The pointer is the system's to keep in step; a guest module leaves the
+  // host players' primary characters alone (see ensureCharacterFor).
+  if (IS_MODULE) return;
   // One batch, so concurrent assignments cannot interleave the pointers.
   const updates = [];
   for (const u of game.users) {

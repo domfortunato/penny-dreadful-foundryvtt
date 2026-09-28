@@ -3,9 +3,9 @@
  * system, penny-dreadful-module.js for the module) are one call each: which
  * package is running is detected in constants.js from the file's own URL,
  * and everything that differs between the flavors lives in flags there
- * (RELABEL_GM today; the mini-game toggle arrives in the next phase).
+ * (IS_MODULE, RELABEL_GM, NS, the type keys).
  */
-import { NS, RELABEL_GM, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
+import { IS_MODULE, NS, RELABEL_GM, SYSTEM_ID, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
 import { ACTOR_DATA_MODELS } from "./data-models.js";
 import { registerActorHooks, registerDirectoryHooks } from "./actor.js";
 import { PDActorSheet } from "./sheet.js";
@@ -20,8 +20,24 @@ import { registerChatHooks } from "./chat.js";
 import { registerJournalHooks } from "./rules.js";
 import { miniGameActive, openScoreboard, registerSceneControl, registerScoreboardHooks } from "./scoreboard.js";
 
+/**
+ * The module flavor in a world that runs the Penny Dreadful SYSTEM would boot
+ * a second copy of everything beside the system's own: two boards under one
+ * application id, two coin tools on one key, every hook twice. Nothing in the
+ * manifest can forbid the pairing (relationships.conflicts is schema only in
+ * 14.365), so the module stands down at init and tells the GM why.
+ */
+const standDown = () => IS_MODULE && game.system?.id === SYSTEM_ID;
+
 export const boot = () => {
   Hooks.once("init", () => {
+    if (standDown()) {
+      log("the Penny Dreadful system is running this world; the module stays off");
+      Hooks.once("ready", () => {
+        if (game.user.isGM) ui.notifications.warn("PD.Notify.ModuleInSystemWorld", { permanent: true });
+      });
+      return;
+    }
     log("init");
     // Merge, never replace: the system owns the whole map today, but the
     // module build registers beside a host system's models, and the stock
@@ -53,10 +69,12 @@ export const boot = () => {
   // After every package's init, before any UI that reads role labels. The
   // module flavor never relabels: a guest does not rename the host's GM.
   Hooks.once("setup", () => {
+    if (standDown()) return;
     if (RELABEL_GM) relabelDirector();
   });
 
   Hooks.once("ready", async () => {
+    if (standDown()) return;
     // Not "pd-player": that is the board's player-name class, and its styles
     // applied to the whole page broke the sidebar for every player.
     if (!game.user.isGM) document.body.classList.add("pd-client-player");

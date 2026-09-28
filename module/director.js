@@ -37,16 +37,28 @@ export const startNewOneShot = async () => {
   // owns the world and clears the whole log.
   const ourMessages = () => (IS_MODULE ? game.messages.filter((m) => !!m.flags?.[NS]) : null);
   const messageCount = IS_MODULE ? ourMessages().length : game.messages.size;
-  const bodyKey = pluralKey(messageCount, IS_MODULE
-    ? { one: "PD.Dialog.OneShotBodyModuleOne", other: "PD.Dialog.OneShotBodyModule" }
-    : { one: "PD.Dialog.OneShotBodyOne", other: "PD.Dialog.OneShotBody" });
+  const pcCount = game.actors.filter((a) => a.type === TYPE_PC).length;
+  // One whole sentence per key, so each count picks its own plural form and
+  // the body says only what this reset will do: fresh characters only while
+  // auto-create is on (the loop at the end honours the same setting), and
+  // in a host campaign that the host's things are left alone.
+  const sentences = [
+    t(pluralKey(pcCount, { one: "PD.Dialog.OneShotPcsOne", other: "PD.Dialog.OneShotPcs" }), {
+      characters: fmt.format(pcCount),
+    }),
+    t(IS_MODULE
+      ? pluralKey(messageCount, { one: "PD.Dialog.OneShotChatModuleOne", other: "PD.Dialog.OneShotChatModule" })
+      : pluralKey(messageCount, { one: "PD.Dialog.OneShotChatOne", other: "PD.Dialog.OneShotChat" }), {
+      messages: fmt.format(messageCount),
+    }),
+    t("PD.Dialog.OneShotNpcs"),
+  ];
+  if (game.settings.get(NS, "autoCreateCharacters")) sentences.push(t("PD.Dialog.OneShotRecreate"));
+  if (IS_MODULE) sentences.push(t("PD.Dialog.OneShotHostUntouched"));
   const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: { title: "PD.Dialog.OneShotTitle", icon: "fa-solid fa-clapperboard" },
     classes: ["penny-dreadful", "pd-dialog"],
-    content: `<p>${t(bodyKey, {
-      characters: fmt.format(game.actors.filter((a) => a.type === TYPE_PC).length),
-      messages: fmt.format(messageCount),
-    })}</p>`,
+    content: `<p>${sentences.join(" ")}</p>`,
     rejectClose: false,
     renderOptions: boardWindowOptions(),
   });
