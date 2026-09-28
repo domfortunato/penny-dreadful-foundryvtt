@@ -5,7 +5,7 @@
  * and everything that differs between the flavors lives in flags there
  * (RELABEL_GM today; the mini-game toggle arrives in the next phase).
  */
-import { IS_MODULE, NS, RELABEL_GM, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
+import { NS, RELABEL_GM, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
 import { ACTOR_DATA_MODELS } from "./data-models.js";
 import { registerActorHooks, registerDirectoryHooks } from "./actor.js";
 import { PDActorSheet } from "./sheet.js";

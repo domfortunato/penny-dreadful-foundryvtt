@@ -7,6 +7,21 @@ let the mirror carry the tag to GitHub, let GitHub Actions build and publish.
 force-syncs refs and prunes anything that exists only on GitHub, which turns a
 GitHub-made release into a draft in silence.
 
+## One tag, two flavors
+
+The repo builds two packages from the same source: the system and the
+mini-game module (`module.json`, entry `module/penny-dreadful-module.js`).
+`npm run release` bumps the version in **both** manifests, and the one tag,
+mirrored to both GitHub repos, builds each repo's own flavor — the workflow
+keys on the repository name: `penny-dreadful-foundryvtt` publishes
+system.json + system.zip, `penny-dreadful-module-foundryvtt` publishes
+module.json + module.zip. Nothing about the procedure below changes; after
+step 5 also verify the module manifest:
+
+```
+curl -sI https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
+```
+
 ## Procedure
 
 1. On `dev`: write the notes under `## X.Y.Z` in `CHANGELOG.md` and commit them.

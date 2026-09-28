@@ -16,6 +16,7 @@
     "import:odds": "node tools/import/odds.mjs",
     "release": "node tools/release.mjs",
     "dev:smoke": "node tools/dev/e2e-smoke.mjs",
+    "dev:smoke-module": "node tools/dev/e2e-smoke-module.mjs",
     "dev:detach": "node tools/dev/e2e-detach.mjs"
   },
   "author": "Dom Bosco (https://github.com/domfortunato)",

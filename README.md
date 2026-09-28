@@ -65,6 +65,26 @@ Foundry VTT 14.365 or newer. In Setup, Game Systems, Install System, paste:
 https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.json
 ```
 
+## The mini-game module
+
+The same game also ships as a **module**, for running a Penny Dreadful
+one-shot as an interlude inside another system's world. Install it from
+Setup, Add-on Modules, Install Module:
+
+```
+https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
+```
+
+Enable it in the world, and the Referee starts and ends the mini game with
+the coin button in the token toolbar: the scoreboard opens on every screen,
+and closes everywhere when the interlude ends. As a guest in your campaign
+the module behaves itself — the board is an ordinary closable window
+(Alt+B reopens it), no characters are created unless you turn that on in
+its settings, its "new one-shot" reset deletes only the mini game's own
+actors and chat messages, and your world's GM labels are never touched.
+Its PCs and NPCs appear in the Actors tab as their own clearly labelled
+types beside your system's.
+
 ## Developing
 
 Plain ES modules, no bundler. The compendium is built from YAML:

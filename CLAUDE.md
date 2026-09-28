@@ -51,9 +51,18 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   defaults OFF (a guest never seeds actors because someone connected);
   the one-shot reset deletes only messages carrying our flags — never
   `deleteAll` in a host campaign — with its own dialog body and tooltip
-  keys (OneShotBodyModule*, NewOneShotModule, Controls.MiniGame). NOT
-  distributed yet: the second mirror, repo-aware workflow and the module
-  smoke in an air-bladder host world are Phase D.
+  keys (OneShotBodyModule*, NewOneShotModule, Controls.MiniGame). The
+  workflow is repo-aware (`.github/workflows/main.yml` keys the flavor on
+  `github.repository`; each repo ships only its own manifest and zip) and
+  `npm run dev:smoke-module` proves the module inside an air-bladder host
+  world (`pd-module-host`, created and junctioned by the script itself; it
+  shuts down and restores `penny-dreadful-dev` around itself). Learned
+  there: `game.shutDown()` pops a confirm when another user is connected —
+  close the second context first or the evaluate hangs; and a world loaded
+  with the module disabled logs one EXPECTED console error per leftover
+  module-typed actor (core preserves it as invalid,
+  `game.actors.invalidDocumentIds`). NOT distributed yet: only the second
+  Gitea→GitHub mirror (Dom's step) remains.
 - No `socket`. Every write is made by a client that already has permission:
   the owner writes the flip result, the Director writes everything else.
 - The authority on any API claim is the shipped client at
