@@ -1,5 +1,5 @@
-import { MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS, TYPE_NPC } from "./constants.js";
-import { SCALE_DEFAULT, openScoreboard, rerenderScoreboard } from "./scoreboard.js";
+import { IS_MODULE, MAX_PENNIES, NPC_MAX_PENNIES_DEFAULT, NPC_MAX_PENNIES_MIN, NS, TYPE_NPC } from "./constants.js";
+import { SCALE_DEFAULT, onMiniGameToggled, openScoreboard, rerenderScoreboard } from "./scoreboard.js";
 import { onCoinsCleared, onHoldChanged } from "./dice-hold.js";
 
 export const registerSettings = () => {
@@ -12,8 +12,21 @@ export const registerSettings = () => {
   game.settings.register(NS, "autoCreateCharacters", {
     name: "PD.Settings.AutoCreate.label",
     hint: "PD.Settings.AutoCreate.hint",
-    scope: "world", config: true, type: Boolean, default: true,
+    // A guest module must not seed actors into someone's campaign just
+    // because a player connected; the Director opts in. The system keeps
+    // its every-player-gets-a-row default.
+    scope: "world", config: true, type: Boolean, default: !IS_MODULE,
   });
+  if (IS_MODULE) {
+    // The Director's mini-game toggle: on opens the board on every client,
+    // off closes it everywhere. World-scoped and Director-written like the
+    // spotlight; the system flavor has no such setting — its board is
+    // always on. Flipped from the scene-control button (scoreboard.js).
+    game.settings.register(NS, "miniGameActive", {
+      scope: "world", config: false, type: Boolean, default: false,
+      onChange: (active) => onMiniGameToggled(active),
+    });
+  }
   // The most pennies any NPC can hold, and the hand a failure kills it with.
   // One number for every NPC. Changing it re-derives every NPC at once, so
   // the board, the sheets and the next flip all use the new hand.

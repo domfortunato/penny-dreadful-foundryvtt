@@ -5,7 +5,7 @@
  * and everything that differs between the flavors lives in flags there
  * (RELABEL_GM today; the mini-game toggle arrives in the next phase).
  */
-import { NS, RELABEL_GM, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
+import { IS_MODULE, NS, RELABEL_GM, TEMPLATES, TYPE_NPC, TYPE_PC, log } from "./constants.js";
 import { ACTOR_DATA_MODELS } from "./data-models.js";
 import { registerActorHooks, registerDirectoryHooks } from "./actor.js";
 import { PDActorSheet } from "./sheet.js";
@@ -18,7 +18,7 @@ import { registerDiceHoldHooks } from "./dice-hold.js";
 import { registerPlayerHooks } from "./players.js";
 import { registerChatHooks } from "./chat.js";
 import { registerJournalHooks } from "./rules.js";
-import { openScoreboard, registerSceneControl, registerScoreboardHooks } from "./scoreboard.js";
+import { miniGameActive, openScoreboard, registerSceneControl, registerScoreboardHooks } from "./scoreboard.js";
 
 export const boot = () => {
   Hooks.once("init", () => {
@@ -60,7 +60,9 @@ export const boot = () => {
     // Not "pd-player": that is the board's player-name class, and its styles
     // applied to the whole page broke the sidebar for every player.
     if (!game.user.isGM) document.body.classList.add("pd-client-player");
-    await openScoreboard();
+    // The system's board is always on; the module's follows the Director's
+    // mini-game toggle (miniGameActive is simply true in the system flavor).
+    if (miniGameActive()) await openScoreboard();
     if (RELABEL_GM) await renameDirector();
     log("ready");
   });

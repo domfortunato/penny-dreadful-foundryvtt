@@ -40,9 +40,20 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   cover both manifests (`check:manifest` runs the pair and cross-checks
   version, documentTypes, ids and entries; a module pack must NOT declare
   `system` or its journals lock to a host it never requires) and
-  `npm run release` bumps both versions under one tag. The module flavor is
-  NOT distributed yet: the mini-game toggle, the guest-scoped one-shot and
-  the second mirror are Phases C and D of the plan.
+  `npm run release` bumps both versions under one tag. GUEST MANNERS
+  (Phase C, module flavor only, all behind `IS_MODULE`): the board is an
+  ordinary closable window (the close button stays, `close()` does not
+  refuse) that follows the Director's world toggle `miniGameActive` — the
+  scene-control coin button IS the toggle for a Director who can write
+  world settings (players' button just reopens their own board, Alt+B
+  too), ready opens the board only when the toggle is on, and
+  `onMiniGameToggled` opens/force-closes on every client; auto-create
+  defaults OFF (a guest never seeds actors because someone connected);
+  the one-shot reset deletes only messages carrying our flags — never
+  `deleteAll` in a host campaign — with its own dialog body and tooltip
+  keys (OneShotBodyModule*, NewOneShotModule, Controls.MiniGame). NOT
+  distributed yet: the second mirror, repo-aware workflow and the module
+  smoke in an air-bladder host world are Phase D.
 - No `socket`. Every write is made by a client that already has permission:
   the owner writes the flip result, the Director writes everything else.
 - The authority on any API claim is the shipped client at

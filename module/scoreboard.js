@@ -1,4 +1,4 @@
-import { MAX_DS, MAX_PENNIES, NS, TEMPLATES, TYPE_NPC, TYPE_PC, canSetWorld, t, warn } from "./constants.js";
+import { IS_MODULE, MAX_DS, MAX_PENNIES, NS, TEMPLATES, TYPE_NPC, TYPE_PC, canSetWorld, t, warn } from "./constants.js";
 
 /**
  * The board's size range and step: the dropdown's presets, 100% to 200% in
@@ -76,20 +76,25 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   async _renderFrame(options) {
     const frame = await super._renderFrame(options);
-    frame.querySelector('button[data-action="close"]')?.remove();
+    // The system's board has no close button: it is the game's home UI.
+    // The module's board is a guest window in someone's campaign and stays
+    // an ordinary, closable one — the toggle and the keybinding reopen it.
+    if (!IS_MODULE) frame.querySelector('button[data-action="close"]')?.remove();
     return frame;
   }
 
   /**
-   * The board does not close. Escape, the (removed) X and any stray caller get
-   * `this` back unchanged. Two exceptions: `{force: true}`, which nothing in
-   * the system uses; and the detached-window manager, which calls `close()`
-   * on every app in a popped-out browser window the user has just closed.
-   * That one must succeed, or the board would linger in a dead document, so
-   * it closes and then comes straight back in the main window.
+   * The SYSTEM's board does not close. Escape, the (removed) X and any stray
+   * caller get `this` back unchanged. Two exceptions: `{force: true}`; and
+   * the detached-window manager, which calls `close()` on every app in a
+   * popped-out browser window the user has just closed. That one must
+   * succeed, or the board would linger in a dead document, so it closes and
+   * then comes straight back in the main window. The MODULE's board closes
+   * like any other window (guest manners), so it takes none of this.
    * @override
    */
   async close(options = {}) {
+    if (IS_MODULE) return super.close(options);
     if (options.closeKey) return this;
     const detached = !!this.window.windowId;
     if (!options.force && !detached) return this;
@@ -185,6 +190,9 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     const scale = PDScoreboard.scale;
     return {
       isDirector,
+      // The module's one-shot reset touches only its own messages, and its
+      // tooltip must not promise the host's chat log.
+      oneShotTooltip: IS_MODULE ? "PD.Board.NewOneShotModule" : "PD.Board.NewOneShot",
       // The spotlight is a world setting: its controls show only to a Director who may write it.
       canSpotlight: isDirector && canSetWorld(),
       // Only when Dice So Nice happens to be active; never required.
@@ -341,6 +349,26 @@ export const openScoreboard = async () => {
   return scoreboard.render(options);
 };
 
+/**
+ * Is the mini game on? Module flavor only: the Director's world toggle that
+ * opens the board on every client and closes it everywhere when it ends. The
+ * system flavor has no such setting — its board is always on.
+ */
+export const miniGameActive = () => {
+  if (!IS_MODULE) return true;
+  try {
+    return game.settings.get(NS, "miniGameActive") === true;
+  } catch {
+    return false;
+  }
+};
+
+/** The toggle's onChange, on every client: the board follows the setting. */
+export const onMiniGameToggled = (active) => {
+  if (active) openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
+  else if (scoreboard?.rendered) scoreboard.close({ force: true }).catch((err) => warn("the scoreboard failed to close:", err));
+};
+
 /** Redraw soon. Debounced: a flip touches several documents in a row. */
 export const rerenderScoreboard = foundry.utils.debounce(() => {
   if (scoreboard?.rendered) scoreboard.render();
@@ -370,22 +398,31 @@ export const registerScoreboardHooks = () => {
 };
 
 /**
- * A toolbar button under Token controls, for a board that was somehow lost.
+ * A toolbar button under Token controls. In the system it reopens a board
+ * that was somehow lost. In the module it is the Director's mini-game
+ * TOGGLE — start it and every client's board opens, end it and they all
+ * close — while a player's button just reopens their own closed board.
  * `tools` is a record keyed by name; `visible` is read once at first render.
  */
 export const registerSceneControl = () => {
   Hooks.on("getSceneControlButtons", (controls) => {
     const tools = controls?.tokens?.tools;
     if (!tools) return;
+    const gmToggle = IS_MODULE && game.user.isGM && canSetWorld();
     tools.pdScoreboard = {
       name: "pdScoreboard",
-      title: "PD.Controls.Scoreboard",
+      title: gmToggle ? "PD.Controls.MiniGame" : "PD.Controls.Scoreboard",
       icon: "fa-solid fa-coins",
       order: Object.keys(tools).length,
       button: true,
       visible: true,
       onChange: () => {
-        openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
+        if (gmToggle) {
+          game.settings.set(NS, "miniGameActive", !miniGameActive())
+            .catch((err) => warn("the mini-game toggle failed:", err));
+        } else {
+          openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
+        }
       },
     };
   });

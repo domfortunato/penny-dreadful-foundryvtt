@@ -1,4 +1,4 @@
-import { NS, TYPE_NPC, TYPE_PC, canSetWorld, pluralKey, t, warn } from "./constants.js";
+import { IS_MODULE, NS, TYPE_NPC, TYPE_PC, canSetWorld, pluralKey, t, warn } from "./constants.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { ensureCharacterFor } from "./players.js";
 import { setSpotlight } from "./spotlight.js";
@@ -23,23 +23,29 @@ const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
  * Director cannot write the setting; the keeper then walks the spotlight to
  * "" through the delete step instead, benched NPCs first so it never lands
  * on one.) The chat is cleared last, so a failure earlier leaves the log
- * intact, via the flush dialog's own yes-callback
- * (`deleteDocuments([], {deleteAll: true})`): `game.messages.flush()`
- * would ask again in a second dialog of its own.
+ * intact: the system via the flush dialog's own yes-callback
+ * (`deleteDocuments([], {deleteAll: true})` — `game.messages.flush()`
+ * would ask again in a second dialog of its own), the module by deleting
+ * only the messages that carry its flags, because a guest never wipes a
+ * host campaign's chat.
  */
 export const startNewOneShot = async () => {
   if (!game.user.isGM) return;
   const fmt = new Intl.NumberFormat(game.i18n.lang);
-  const bodyKey = pluralKey(game.messages.size, {
-    one: "PD.Dialog.OneShotBodyOne",
-    other: "PD.Dialog.OneShotBody",
-  });
+  // The module is a guest: it deletes only the messages its own cards wrote
+  // (they all carry our flags), never a host campaign's chat. The system
+  // owns the world and clears the whole log.
+  const ourMessages = () => (IS_MODULE ? game.messages.filter((m) => !!m.flags?.[NS]) : null);
+  const messageCount = IS_MODULE ? ourMessages().length : game.messages.size;
+  const bodyKey = pluralKey(messageCount, IS_MODULE
+    ? { one: "PD.Dialog.OneShotBodyModuleOne", other: "PD.Dialog.OneShotBodyModule" }
+    : { one: "PD.Dialog.OneShotBodyOne", other: "PD.Dialog.OneShotBody" });
   const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: { title: "PD.Dialog.OneShotTitle", icon: "fa-solid fa-clapperboard" },
     classes: ["penny-dreadful", "pd-dialog"],
     content: `<p>${t(bodyKey, {
       characters: fmt.format(game.actors.filter((a) => a.type === TYPE_PC).length),
-      messages: fmt.format(game.messages.size),
+      messages: fmt.format(messageCount),
     })}</p>`,
     rejectClose: false,
     renderOptions: boardWindowOptions(),
@@ -52,7 +58,14 @@ export const startNewOneShot = async () => {
   if (benched.length) await foundry.documents.Actor.updateDocuments(benched);
   const characters = game.actors.filter((a) => a.type === TYPE_PC).map((a) => a.id);
   if (characters.length) await foundry.documents.Actor.deleteDocuments(characters);
-  await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
+  if (IS_MODULE) {
+    // Re-read after the confirm, like the actors above: core looks each id
+    // up with `strict: true`, and the dialog may have sat open a while.
+    const ids = ourMessages().map((m) => m.id);
+    if (ids.length) await foundry.documents.ChatMessage.deleteDocuments(ids);
+  } else {
+    await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
+  }
   for (const user of game.users) {
     if (user.active) await ensureCharacterFor(user, { force: true });
   }
