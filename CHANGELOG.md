@@ -6,7 +6,7 @@ one, writes the section into the release tag, and the Release Creation workflow
 creates the release with it. `npm run release X.Y.Z -- --dry-run` shows the exact
 body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 
-## Unreleased
+## 0.2.1
 
 - The Director can no longer ask for a DS higher than the pennies a row holds — such a flip cannot be met. The button is greyed out with a tooltip saying why, and the pending DS stays clickable so it can still be withdrawn even after pennies drop below it
 - Review fixes: the one-shot reset clears the spotlight before touching any row, so a spotlight sitting on an NPC no longer hops onto a character mid-reset (and, with two Directors connected, can no longer survive the reset pointing at a deleted one); notices show character names exactly as typed, even names with angle brackets; the reset confirm formats its message and character counts for the reader's locale
