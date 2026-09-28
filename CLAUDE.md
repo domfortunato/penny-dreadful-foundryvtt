@@ -22,6 +22,27 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   in constants.js; no `"character"`/`"npc"` literal appears outside that file,
   because the planned module build prefixes them (de-privileging done
   2026-09-28 as module Phase A — see the module plan in project memory).
+- ONE SOURCE, TWO FLAVORS (module Phase B, 2026-09-28): `system.json` boots
+  `module/penny-dreadful.js`, `module.json` (id `penny-dreadful-module`)
+  boots `module/penny-dreadful-module.js`; each entry is one `boot()` call
+  into boot.js. constants.js detects the running flavor from its own
+  `import.meta.url` (a path under `modules/penny-dreadful-module/`) at
+  module-evaluation time, so top-level consumers (the add dialog's label
+  map, sheet PARTS, the data-model keys) need no boot choreography. Flavor
+  differences live ONLY in constants.js: `NS` (the RUNNING package id —
+  settings, keybindings, runtime-written flags, `RULES_PACK`),
+  TYPE_PC/TYPE_NPC (core keys a module's sub-types `<module-id>.<subtype>`,
+  labels `TYPES.Actor.penny-dreadful-module.*`), the TEMPLATES root, and
+  `RELABEL_GM` (a guest module never touches a host's role labels).
+  `CONTENT_NS` stays "penny-dreadful" in BOTH flavors: the journals' baked
+  flags are shipped content, and they are read straight off `flags` because
+  `getFlag` throws on a scope that is not an installed package. The gates
+  cover both manifests (`check:manifest` runs the pair and cross-checks
+  version, documentTypes, ids and entries; a module pack must NOT declare
+  `system` or its journals lock to a host it never requires) and
+  `npm run release` bumps both versions under one tag. The module flavor is
+  NOT distributed yet: the mini-game toggle, the guest-scoped one-shot and
+  the second mirror are Phases C and D of the plan.
 - No `socket`. Every write is made by a client that already has permission:
   the owner writes the flip result, the Director writes everything else.
 - The authority on any API claim is the shipped client at

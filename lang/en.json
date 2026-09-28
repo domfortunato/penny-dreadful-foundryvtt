@@ -95,5 +95,7 @@
   "PD.Sheet.Player": "Player",
   "PD.Sheet.PlayerNone": "No player",
   "TYPES.Actor.character": "Character",
-  "TYPES.Actor.npc": "NPC"
+  "TYPES.Actor.npc": "NPC",
+  "TYPES.Actor.penny-dreadful-module.character": "Character (Penny Dreadful)",
+  "TYPES.Actor.penny-dreadful-module.npc": "NPC (Penny Dreadful)"
 }

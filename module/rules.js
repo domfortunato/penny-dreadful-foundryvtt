@@ -1,10 +1,11 @@
-import { NS, SYSTEM_ID } from "./constants.js";
+import { CONTENT_NS, NS } from "./constants.js";
 import { renderFromBoard } from "./scoreboard.js";
 
 /** The journals the importers under tools/import/ write; `check:manifest` keeps the ids equal. */
 export const RULES_JOURNAL_ID = "VV0ezsslj1ZG9qbc";
 export const ODDS_JOURNAL_ID = "ABPaGhE6b5ZXatpu";
-export const RULES_PACK = `${SYSTEM_ID}.rules`;
+/** A pack collection is keyed by the RUNNING package: whoever ships the pack owns the key. */
+export const RULES_PACK = `${NS}.rules`;
 
 const openJournal = async (id, name, options = {}) => {
   let doc = await fromUuid(`Compendium.${RULES_PACK}.JournalEntry.${id}`);
@@ -29,9 +30,12 @@ export const openOdds = () => openJournal(ODDS_JOURNAL_ID, "Odds of Success", { 
  * heading. On the system's own journals (flagged by the importers) the
  * rename field goes; the window title names the journal, and each page keeps
  * the heading it needs. Rename an imported copy from the Journal directory.
+ * The flag is baked CONTENT (both flavors ship the same packs), so it is
+ * read under CONTENT_NS and straight off `flags`: `getFlag` would throw in
+ * the module flavor, where "penny-dreadful" is not an installed package.
  */
 export const registerJournalHooks = () => {
   Hooks.on("renderJournalEntrySheet", (app, element) => {
-    element.classList.toggle("pd-journal", !!app.document?.getFlag?.(NS, "journal"));
+    element.classList.toggle("pd-journal", !!app.document?.flags?.[CONTENT_NS]?.journal);
   });
 };

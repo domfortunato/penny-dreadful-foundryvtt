@@ -113,26 +113,28 @@ if (dryRun) {
   process.exit(0);
 }
 
-// 6. Bump system.json version (targeted single-line replace, so the diff stays minimal).
-//    A manifest that already says this version is fine: the first release of a new
-//    system ships the version it was scaffolded with, so there is nothing to commit
-//    and the tag goes on HEAD as it is.
-const sysPath = path.join(ROOT, "system.json");
-const before = fs.readFileSync(sysPath, "utf8");
-if (!/"version"\s*:\s*"[^"]*"/.test(before)) die(`Could not find a "version" field to update in system.json`);
-const after = before.replace(/("version"\s*:\s*")[^"]*(")/, `$1${version}$2`);
-const bumped = after !== before;
-if (bumped) {
-  fs.writeFileSync(sysPath, after);
-  if (JSON.parse(after).version !== version) die(`system.json version did not update cleanly — aborting.`);
-  console.log(`\n✓ system.json version → ${version}`);
-} else {
-  console.log(`\n✓ system.json already at ${version}; no bump commit`);
+// 6. Bump the version in BOTH manifests (targeted single-line replace, so the
+//    diff stays minimal): one tag ships two flavors, and check:manifest fails
+//    the moment the two disagree. A manifest that already says this version is
+//    fine: the first release of a new system ships the version it was
+//    scaffolded with, so there is nothing to commit and the tag goes on HEAD.
+const MANIFESTS = ["system.json", "module.json"];
+let bumped = false;
+for (const name of MANIFESTS) {
+  const p = path.join(ROOT, name);
+  const before = fs.readFileSync(p, "utf8");
+  if (!/"version"\s*:\s*"[^"]*"/.test(before)) die(`Could not find a "version" field to update in ${name}`);
+  const after = before.replace(/("version"\s*:\s*")[^"]*(")/, `$1${version}$2`);
+  if (after === before) { console.log(`✓ ${name} already at ${version}; no bump`); continue; }
+  fs.writeFileSync(p, after);
+  if (JSON.parse(after).version !== version) die(`${name} version did not update cleanly — aborting.`);
+  console.log(`✓ ${name} version → ${version}`);
+  bumped = true;
 }
 
 // 7. Commit (when bumped), tag, push branch + tag to origin.
 if (bumped) {
-  run(`git add system.json`);
+  run(`git add ${MANIFESTS.join(" ")}`);
   run(`git commit -m "Release ${version}"`);
 }
 // The tag message comes from a file, not `-m`: it is many lines, and a quoted

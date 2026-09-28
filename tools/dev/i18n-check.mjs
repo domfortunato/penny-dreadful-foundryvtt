@@ -30,12 +30,20 @@ for (const f of sources) {
   const text = readFileSync(f, "utf8");
   for (const m of text.matchAll(/["'`](PD\.[A-Za-z0-9_.]+)["'`]/g)) used.add(m[1]);
 }
-// Type labels are read by core from the manifest's documentTypes.
+// Type labels are read by core from the manifests' documentTypes. The
+// module flavor's types are keyed `<module-id>.<subtype>` by core, so its
+// labels live at TYPES.Actor.penny-dreadful-module.character and so on
+// (client helpers/localization.mjs:96 builds the key from the full type).
 const manifest = JSON.parse(readFileSync(join(ROOT, "system.json"), "utf8"));
 for (const [doc, types] of Object.entries(manifest.documentTypes ?? {})) {
   for (const type of Object.keys(types)) used.add(`TYPES.${doc}.${type}`);
 }
 for (const pack of manifest.packs ?? []) if (/^PD\./.test(pack.label)) used.add(pack.label);
+const moduleManifest = JSON.parse(readFileSync(join(ROOT, "module.json"), "utf8"));
+for (const [doc, types] of Object.entries(moduleManifest.documentTypes ?? {})) {
+  for (const type of Object.keys(types)) used.add(`TYPES.${doc}.${moduleManifest.id}.${type}`);
+}
+for (const pack of moduleManifest.packs ?? []) if (/^PD\./.test(pack.label)) used.add(pack.label);
 
 let failed = false;
 const missing = [...used].filter((k) => !declared.has(k)).sort();

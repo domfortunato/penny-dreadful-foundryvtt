@@ -9,6 +9,7 @@ body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 ## Unreleased
 
 - Internal restructuring toward the module build (no player-visible change): the system no longer subclasses Actor — its update guards run as a hook, its data models merge into Foundry's map instead of replacing it, and the actor type names live in one constants file
+- The repo now also carries the mini-game module flavor (id penny-dreadful-module): the same source boots as this system or as a module inside another system's world, one release versions both manifests, and the checks gate both. The module is not distributed yet — its Director toggle and release pipeline are still to come
 
 ## 0.2.1
 

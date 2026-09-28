@@ -1,0 +1,66 @@
+{
+  "id": "penny-dreadful-module",
+  "title": "Penny Dreadful (Mini Game)",
+  "description": "A horror-movie game with one mechanic: flip your pennies — as a mini game inside any other system's world, for a one-shot interlude on its own scoreboard that leaves the host campaign untouched. The game rules are by Daniel Fitzpatrick (CC BY-SA 4.0); this Foundry VTT module is an independent adaptation he is not involved in.",
+  "version": "0.2.1",
+  "compatibility": {
+    "minimum": "14.365",
+    "verified": "14.367"
+  },
+  "license": "LICENSE.txt",
+  "url": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt",
+  "readme": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt#readme",
+  "bugs": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt/issues",
+  "changelog": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases",
+  "manifest": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json",
+  "download": "https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.zip",
+  "authors": [
+    {
+      "name": "Dom Bosco",
+      "url": "https://github.com/domfortunato"
+    }
+  ],
+  "esmodules": [
+    "module/penny-dreadful-module.js"
+  ],
+  "styles": [
+    {
+      "src": "css/penny-dreadful.css"
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "character": {},
+      "npc": {}
+    }
+  },
+  "packs": [
+    {
+      "name": "rules",
+      "label": "PD.Pack.rules",
+      "type": "JournalEntry"
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Penny Dreadful",
+      "sorting": "a",
+      "packs": [
+        "rules"
+      ]
+    }
+  ],
+  "flags": {
+    "hotReload": {
+      "extensions": ["css", "html", "json"],
+      "paths": ["css", "templates", "lang"]
+    }
+  }
+}
