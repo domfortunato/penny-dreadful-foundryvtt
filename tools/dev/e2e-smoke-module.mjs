@@ -166,7 +166,13 @@ try {
     const ctx = await browser.newContext({ viewport: VIEWPORT });
     const page = await ctx.newPage();
     await joinAs(page, null);
-    await page.evaluate(() => game.shutDown()).catch(() => {});
+    // Fire, never await: with another user connected (Dom testing, say)
+    // game.shutDown() pops a confirm, so answer it a beat later.
+    await page.evaluate(() => { game.shutDown(); }).catch(() => {});
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => {
+      document.querySelector('.application.dialog button[data-action="yes"]')?.click();
+    }).catch(() => {});
     await ctx.close();
     await waitFor(async () => !(await status()).active, 60000, "the server to return to setup");
     st = await status();
@@ -341,6 +347,25 @@ try {
     .then(() => ok("an NPC added from the board carries the namespaced type"))
     .catch(() => fail("an NPC added from the board carries the namespaced type"));
 
+  // The tab tags OUR actors only. A host actor wearing "(PC-PD)" was Dom's
+  // first field report from this very world: the old check read "not our
+  // NPC" as "our PC".
+  const tags = await gm.evaluate(async () => {
+    ui.sidebar.expand();
+    ui.sidebar.changeTab("actors", "primary");
+    await new Promise((r) => setTimeout(r, 800));
+    const names = [...document.querySelectorAll("#actors li.directory-item.entry")]
+      .map((li) => li.querySelector(".entry-name")?.textContent.replace(/\s+/g, " ").trim());
+    ui.sidebar.changeTab("chat", "primary");
+    return {
+      pc: names.find((n) => n?.startsWith("Module Smoke PC")),
+      npc: names.find((n) => n?.startsWith("Module Smoke NPC")),
+      host: names.find((n) => n?.startsWith("Host Keepsake")),
+    };
+  });
+  check(tags.pc?.endsWith("(PC-PD)") && tags.npc?.endsWith("(NPC-PD)") && tags.host === "Host Keepsake",
+    `the Actors tab tags only the mini game's actors (${JSON.stringify(tags)})`);
+
   await gm.screenshot({ path: join(OUT, "module-board.png") });
   note("screenshot: tools/dev/out/module-board.png");
 
@@ -349,11 +374,15 @@ try {
   const before = await gm.evaluate(() => game.messages.size);
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="newOneShot"]').click());
   await clickDialogButton(gm, "yes");
+  // ONE settle wait folding every end-state condition: the chat clear lands
+  // after the actor writes, so a wait on the actors alone reads the message
+  // counts mid-reset (the system smoke learned the same the hard way).
   await gm.waitForFunction((args) => {
     const [id, hostActorId] = args;
     return !game.actors.getName("Module Smoke PC")
       && !!game.actors.get(hostActorId)
-      && game.actors.getName("Module Smoke NPC")?.system.onBoard === false;
+      && game.actors.getName("Module Smoke NPC")?.system.onBoard === false
+      && game.messages.filter((m) => !!m.flags?.[id]).length === 0;
   }, [MODULE_ID, hostBaseline.actorId], { timeout: 30000 })
     .then(() => ok("the reset deleted the PC, benched the NPC and spared the host's actor"))
     .catch(() => fail("the reset deleted the PC, benched the NPC and spared the host's actor"));
@@ -376,10 +405,11 @@ try {
   /* ----------------------------------------- stage 7: the rules journal */
   console.log("\nStage 7: the shipped journals");
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="openRules"]').click());
-  await gm.waitForFunction(() => !!document.querySelector(".journal-entry-page, .journal-sheet"), null, { timeout: 15000 })
-    .then(() => ok("the rules journal opens from the module's pack")).catch(() => fail("the rules journal opens from the module's pack"));
-  check(await gm.evaluate(() => !!document.querySelector(".pd-journal")),
-    "the journal carries pd-journal styling (the baked content flag is read)");
+  // Wait for the class, not just any journal element: the render hook that
+  // applies pd-journal races a selector on the bare sheet.
+  await gm.waitForFunction(() => !!document.querySelector(".pd-journal"), null, { timeout: 15000 })
+    .then(() => ok("the rules journal opens from the module's pack with pd-journal styling (the baked content flag is read)"))
+    .catch(() => fail("the rules journal opens from the module's pack with pd-journal styling (the baked content flag is read)"));
 
   /* ------------------------------------- stage 8: disable leaves it whole */
   console.log("\nStage 8: disabling the module");
@@ -414,6 +444,10 @@ try {
   await bobCtx.close().catch(() => {});
   await gm.waitForTimeout(2000);
   await gm.evaluate(() => { game.shutDown(); }).catch(() => {});
+  await gm.waitForTimeout(1500);
+  await gm.evaluate(() => {
+    document.querySelector('.application.dialog button[data-action="yes"]')?.click();
+  }).catch(() => {});
   await waitFor(async () => !(await status()).active, 60000, "the host world to shut down").catch(() => {});
   // The launch can race the teardown; ask again until the world is up.
   let restored = false;

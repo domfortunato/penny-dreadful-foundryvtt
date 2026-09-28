@@ -75,21 +75,33 @@ export const boardActors = () => {
   return [...characters, ...npcs];
 };
 
+/** The tag for OUR types and nobody else's: another package's actor (a host
+ * system's, another module's) gets none, which is the whole point of the
+ * check — "everything that is not our NPC" once meant "our PC" and tagged a
+ * host world's every actor (PC-PD). */
+const typeTagKey = (actor) => {
+  if (actor?.type === TYPE_PC) return "PD.Directory.PcTag";
+  if (actor?.type === TYPE_NPC) return "PD.Directory.NpcTag";
+  return null;
+};
+
 /**
- * The Actors tab tells PCs from NPCs: every entry gets its type's tag,
- * "(PC-PD)" or "(NPC-PD)". Pure render decoration, redrawn by the hook on
- * every render of the tab (popped out included) — the stored name never
- * carries it, so the board, the chat cards and the dialogs stay clean.
+ * The Actors tab tells our PCs from our NPCs: each of the game's own entries
+ * gets its type's tag, "(PC-PD)" or "(NPC-PD)"; any other package's actor is
+ * left alone. Pure render decoration, redrawn by the hook on every render of
+ * the tab (popped out included) — the stored name never carries it, so the
+ * board, the chat cards and the dialogs stay clean.
  */
 export const registerDirectoryHooks = () => {
   Hooks.on("renderActorDirectory", (app, html) => {
     for (const li of html.querySelectorAll("li.directory-item.entry[data-entry-id]")) {
       const actor = game.actors.get(li.dataset.entryId);
+      const key = typeTagKey(actor);
       const name = li.querySelector(".entry-name");
-      if (!actor || !name || name.querySelector(".pd-type-tag")) continue;
+      if (!key || !name || name.querySelector(".pd-type-tag")) continue;
       const tag = document.createElement("span");
       tag.className = "pd-type-tag";
-      tag.textContent = t(actor.type === TYPE_NPC ? "PD.Directory.NpcTag" : "PD.Directory.PcTag");
+      tag.textContent = t(key);
       // The gap is the stylesheet's margin, not a hard-coded space.
       name.append(tag);
     }

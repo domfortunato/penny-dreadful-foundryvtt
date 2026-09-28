@@ -409,9 +409,14 @@ export const registerSceneControl = () => {
     const tools = controls?.tokens?.tools;
     if (!tools) return;
     const gmToggle = IS_MODULE && game.user.isGM && canSetWorld();
+    // In a host campaign the button must say WHOSE board this is (Dom's
+    // ruling: the tooltip names Penny Dreadful); in our own system the
+    // plain "Scoreboard" is the whole world's one board.
     tools.pdScoreboard = {
       name: "pdScoreboard",
-      title: gmToggle ? "PD.Controls.MiniGame" : "PD.Controls.Scoreboard",
+      title: gmToggle ? "PD.Controls.MiniGame"
+        : IS_MODULE ? "PD.Controls.ScoreboardModule"
+          : "PD.Controls.Scoreboard",
       icon: "fa-solid fa-coins",
       order: Object.keys(tools).length,
       button: true,
