@@ -2,7 +2,7 @@
   "id": "penny-dreadful",
   "title": "Penny Dreadful",
   "description": "A horror-movie game with one mechanic: flip your pennies. The game rules are by Daniel Fitzpatrick (CC BY-SA 4.0); this Foundry VTT system is an independent adaptation he is not involved in.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "compatibility": {
     "minimum": "14.365",
     "verified": "14.367"
