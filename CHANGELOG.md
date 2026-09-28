@@ -17,6 +17,7 @@ body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 - The board's icons say what they do: person-plus adds a PC, a slashed person takes a row off, the stranger in the trench coat adds an NPC, and a magnifier labels the size dropdown
 - A row's name reads "Edit" on hover and is a button only for the Director and the row's own player; other players (and every player on an NPC row) see plain text
 - The board's size is a dropdown of presets (100% to 200% in tens) instead of two zoom buttons, and the board now starts at 110%; a size already picked is kept
+- Review fixes: the one-shot reset works when the Director who clicks is not Foundry's designated GM, re-reads the world after its confirm, benches NPCs before deleting PCs and clears the chat last, so an interrupted reset can no longer leave a half-cleared world; a renamed character with markup-like text displays correctly in the remove confirm; the size dropdown keeps keyboard focus between steps and formats its percentages like the odds do; assorted translation-readiness fixes ("1 messages", hand-built labels, PC/character wording unified)
 
 ## 0.1.0
 

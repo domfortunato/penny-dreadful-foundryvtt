@@ -6,11 +6,14 @@ const creating = new Set();
  * Every player gets a row without anyone creating one: when a non-GM user
  * connects and owns no character, the ONE active GM client creates an actor
  * named after them and hands them ownership. Existing characters are found
- * by ownership, never by name.
+ * by ownership, never by name. `force` skips the designated-GM check for an
+ * explicit Director action (the one-shot reset): whoever clicked must be
+ * the client that recreates, or a non-designated GM's reset would delete
+ * every row and rebuild none. The auto-create setting still rules.
  */
-export const ensureCharacterFor = async (user) => {
+export const ensureCharacterFor = async (user, { force = false } = {}) => {
   if (!user || user.isGM) return;
-  if (game.users.activeGM !== game.user) return;
+  if (!force && game.users.activeGM !== game.user) return;
   if (!game.settings.get(NS, "autoCreateCharacters")) return;
   const OWNER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
   // An explicit entry, not `ownership.default`: a character everyone may edit is
@@ -48,23 +51,27 @@ export const assignPlayer = async (actor, userId) => {
   const chosen = userId ? game.users.get(userId) : null;
   if (userId && (!chosen || chosen.isGM)) return;
   if ((actor.ownerUser?.id ?? null) === (chosen?.id ?? null)) return;
-  // The whole ownership object is replaced, the way core's own ownership
-  // dialog does it ({diff: false, recursive: false}): a partial update
-  // cannot remove an entry.
+  // The whole ownership object is replaced: a partial update cannot remove
+  // an entry. {diff: false, recursive: false} scopes the replacement to the
+  // keys present in the update, here only `ownership`. (Core's own
+  // ownership dialog does the same job through its _replace() operator.)
   const ownership = foundry.utils.deepClone(actor._source.ownership);
   for (const u of game.users) {
     if (!u.isGM && u !== chosen && ownership[u.id] === OWNER) delete ownership[u.id];
   }
   if (chosen) ownership[chosen.id] = OWNER;
   await actor.update({ ownership }, { diff: false, recursive: false });
+  // One batch, so concurrent assignments cannot interleave the pointers.
+  const updates = [];
   for (const u of game.users) {
     if (u.isGM) continue;
     if (u === chosen) {
-      if (!u.character) await u.update({ character: actor.id });
+      if (!u.character) updates.push({ _id: u.id, character: actor.id });
     } else if (u._source.character === actor.id) {
-      await u.update({ character: null });
+      updates.push({ _id: u.id, character: null });
     }
   }
+  if (updates.length) await foundry.documents.User.updateDocuments(updates);
 };
 
 export const registerPlayerHooks = () => {

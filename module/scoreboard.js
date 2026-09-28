@@ -196,9 +196,11 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       // name, the widest hand of pennies, the dead, the actions
       columns: MAX_PENNIES + 3,
       // The size dropdown's presets, with the client's current one marked.
+      // The label goes through the same Intl percent as the odds, so a
+      // French client is not shown "62,3 %" beside "110%".
       scaleOptions: Array.from({ length: Math.round((SCALE_MAX - SCALE_MIN) / SCALE_STEP) + 1 }, (_, i) => {
-        const percent = Math.round((SCALE_MIN + i * SCALE_STEP) * 100);
-        return { percent, selected: percent === Math.round(scale * 100) };
+        const value = Math.round((SCALE_MIN + i * SCALE_STEP) * 100);
+        return { percent: value, label: percent(value / 100, game.i18n.lang), selected: value === Math.round(scale * 100) };
       }),
     };
   }

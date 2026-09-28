@@ -81,7 +81,12 @@ export const addToBoard = async (type) => {
     .sort(byName)
     .map((a) => {
       const player = a.ownerUser;
-      return { id: a.id, label: player && player.name !== a.name ? `${a.name} (${player.name})` : a.name };
+      return {
+        id: a.id,
+        label: player && player.name !== a.name
+          ? t("PD.Dialog.AddCandidate", { name: a.name, player: player.name })
+          : a.name,
+      };
     });
   const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.addActor, { candidates, labels });
   const result = await foundry.applications.api.DialogV2.wait({
@@ -127,7 +132,9 @@ export const removeFromBoard = async (actor) => {
       icon: "fa-solid fa-user-slash",
     },
     classes: ["penny-dreadful", "pd-dialog"],
-    content: `<p>${t("PD.Dialog.RemoveBody", { name: actor.name })}</p>`,
+    // Escaped: localize does not escape, this string is parsed as HTML, and
+    // a player can rename their own character to anything.
+    content: `<p>${t("PD.Dialog.RemoveBody", { name: foundry.utils.escapeHTML(actor.name) })}</p>`,
     yes: { label: "PD.Dialog.Remove", icon: "fa-solid fa-user-slash" },
     no: { label: "PD.Dialog.Cancel" },
     rejectClose: false,

@@ -162,13 +162,19 @@ junction to this folder; the local 14.365 app runs on :30000.
   name, and its buttons are Remove / Cancel — core's confirm already makes
   the no-button the default, so Enter never removes.
 - The new-one-shot tool (`startNewOneShot` in director.js, the clapperboard)
-  resets a world Dom reuses between one-shots: one confirm, then delete
-  every character, clear the chat with `ChatMessage.deleteDocuments([],
-  {deleteAll: true})` (core's `messages.flush()` would stack a second
-  confirm of its own), bench on-board NPCs (an NPC is the Director's prep,
-  never deleted), `setSpotlight("")`, then `ensureCharacterFor` each active
-  user so fresh rows appear at once. Off-board actors live in the Actors
-  tab; that is where "nothing is deleted" points.
+  resets a world Dom reuses between one-shots. ORDER AND GUARDS ARE
+  DELIBERATE (fifth review): everything is re-read AFTER the confirm (core
+  deletes look ids up with `strict: true`, so a stale pre-dialog list can
+  throw mid-reset); on-board NPCs are benched BEFORE the characters are
+  deleted (never deleted — an NPC is the Director's prep), so a second
+  GM's spotlight keeper has no row to advance onto; the chat is cleared
+  LAST via `ChatMessage.deleteDocuments([], {deleteAll: true})` (core's
+  `messages.flush()` would stack a second confirm; and clearing early
+  turns a later failure into a half-reset); and `ensureCharacterFor` runs
+  with `{force: true}`, because the clicking Director need not be
+  `game.users.activeGM` and the designation guard would silently recreate
+  nothing. Off-board actors live in the Actors tab; that is where
+  "nothing is deleted" points.
 - A character's player is assigned on its sheet, not in Foundry's ownership
   dialog: the Director's Player dropdown calls `assignPlayer` (players.js),
   which makes the chosen user the row's one explicit non-GM OWNER (other

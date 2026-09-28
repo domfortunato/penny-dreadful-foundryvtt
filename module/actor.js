@@ -88,7 +88,8 @@ export const registerDirectoryHooks = () => {
       const tag = document.createElement("span");
       tag.className = "pd-type-tag";
       tag.textContent = t(actor.type === "npc" ? "PD.Directory.NpcTag" : "PD.Directory.PcTag");
-      name.append(" ", tag);
+      // The gap is the stylesheet's margin, not a hard-coded space.
+      name.append(tag);
     }
   });
 };

@@ -54,9 +54,10 @@
         {{/if}}
         <span class="pd-zoom" data-tooltip="{{localize 'PD.Board.Zoom'}}">
             <i class="pd-zoom-icon fa-solid fa-magnifying-glass-plus"></i>
-            <select class="pd-zoom-select" aria-label="{{localize 'PD.Board.Zoom'}}">
+            {{!-- id + name: the mixin restores focus across part replacement only for named elements. --}}
+            <select id="pd-zoom-select" name="pdZoom" class="pd-zoom-select" aria-label="{{localize 'PD.Board.Zoom'}}">
                 {{#each scaleOptions}}
-                    <option value="{{percent}}" {{#if selected}}selected{{/if}}>{{percent}}%</option>
+                    <option value="{{percent}}" {{#if selected}}selected{{/if}}>{{label}}</option>
                 {{/each}}
             </select>
         </span>

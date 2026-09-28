@@ -1,4 +1,4 @@
-import { NS, canSetWorld, t, warn } from "./constants.js";
+import { NS, canSetWorld, pluralKey, t, warn } from "./constants.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { ensureCharacterFor } from "./players.js";
 import { setSpotlight } from "./spotlight.js";
@@ -11,30 +11,44 @@ const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
  * is deleted, the chat log is cleared, on-board NPCs are benched (an NPC is
  * the Director's prep and is kept), the spotlight goes out, and a fresh
  * character is made for each connected player (the auto-create setting still
- * rules). The chat is cleared with the flush dialog's own yes-callback
- * (`deleteDocuments([], {deleteAll: true})`): `game.messages.flush()` would
- * ask again in a second dialog of its own.
+ * rules; `force` skips only the designated-GM check, because the Director
+ * who clicked need not be `game.users.activeGM`). The order matters:
+ * everything is re-read AFTER the confirm (a row deleted while the dialog
+ * sat open would make the batch throw on its stale id — core looks each id
+ * up with `strict: true`); the NPCs are benched BEFORE the characters are
+ * deleted, so another GM's spotlight keeper has no on-board row left to
+ * advance onto mid-reset; and the chat is cleared last, so a failure
+ * earlier leaves the log intact. The chat clear is the flush dialog's own
+ * yes-callback (`deleteDocuments([], {deleteAll: true})`):
+ * `game.messages.flush()` would ask again in a second dialog of its own.
  */
 export const startNewOneShot = async () => {
   if (!game.user.isGM) return;
-  const characters = game.actors.filter((a) => a.type === "character");
+  const bodyKey = pluralKey(game.messages.size, {
+    one: "PD.Dialog.OneShotBodyOne",
+    other: "PD.Dialog.OneShotBody",
+  });
   const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: { title: "PD.Dialog.OneShotTitle", icon: "fa-solid fa-clapperboard" },
     classes: ["penny-dreadful", "pd-dialog"],
-    content: `<p>${t("PD.Dialog.OneShotBody", { characters: characters.length, messages: game.messages.size })}</p>`,
+    content: `<p>${t(bodyKey, {
+      characters: game.actors.filter((a) => a.type === "character").length,
+      messages: game.messages.size,
+    })}</p>`,
     rejectClose: false,
     renderOptions: boardWindowOptions(),
   });
   if (confirmed !== true) return;
-  await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
-  await foundry.documents.Actor.deleteDocuments(characters.map((a) => a.id));
   const benched = game.actors
     .filter((a) => a.type === "npc" && a.system.onBoard)
     .map((a) => ({ _id: a.id, "system.onBoard": false, "system.challenge": { ...CLEARED } }));
   if (benched.length) await foundry.documents.Actor.updateDocuments(benched);
+  const characters = game.actors.filter((a) => a.type === "character").map((a) => a.id);
+  if (characters.length) await foundry.documents.Actor.deleteDocuments(characters);
   if (canSetWorld()) await setSpotlight("");
+  await foundry.documents.ChatMessage.deleteDocuments([], { deleteAll: true });
   for (const user of game.users) {
-    if (user.active) await ensureCharacterFor(user);
+    if (user.active) await ensureCharacterFor(user, { force: true });
   }
 };
 
