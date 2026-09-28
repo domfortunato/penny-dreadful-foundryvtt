@@ -22,7 +22,13 @@ export const issueChallenge = async (actor, ds) => {
   if (!isDirector() || !actor) return;
   if (actor.system.dead) return ui.notifications.warn(t("PD.Notify.Dead", { name: actor.name }));
   ds = Math.clamp(Math.round(Number(ds)), 1, MAX_DS);
+  // Withdrawing the pending DS comes first and is always allowed, even when
+  // the pennies have since dropped below it: the pill is the undo.
   if (actor.system.challenge.ds === ds) return clearChallenge(actor);
+  // A DS above the row's pennies cannot be met (Dom's ruling): never ask it.
+  if (ds > actor.system.pennies) {
+    return ui.notifications.warn(t("PD.Notify.DsOverPennies", { name: actor.name, ds }));
+  }
   // A new DS over a pending one replaces it: the old request is withdrawn.
   await withdrawRequests(actor);
   await actor.update({ "system.challenge": { ds, issuedBy: game.user.id, issuedAt: Date.now() } });

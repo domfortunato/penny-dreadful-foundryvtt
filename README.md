@@ -26,14 +26,15 @@ There are no character sheets. There is a scoreboard.
   labelled (PC-PD) or (NPC-PD), so the two are told apart at a glance.
 - **Who flips**: only the Director and the row's own player can flip a row's
   pennies; an NPC is the Director's alone. Everyone else sees "waiting".
-- **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge;
-  minus and plus adjust pennies; a star marks whose turn it is and a Next arrow
-  advances it; PCs and NPCs can be taken off the board (a confirm asks first,
-  and nothing is deleted — the actor stays in the Actors tab) and added back
-  or created by name from the toolbar. Each character's sheet has a Player
-  dropdown that gives the row to a player — one player can own several
-  characters. NPCs sit in their own section under the characters with a slot
-  for each penny they can hold.
+- **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge
+  (a DS higher than the pennies the row holds cannot be met, so its button is
+  greyed out); minus and plus adjust pennies; a star marks whose turn it is
+  and a Next arrow advances it; PCs and NPCs can be taken off the board (a
+  confirm asks first, and nothing is deleted — the actor stays in the Actors
+  tab) and added back or created by name from the toolbar. Each character's
+  sheet has a Player dropdown that gives the row to a player — one player
+  can own several characters. NPCs sit in their own section under the
+  characters with a slot for each penny they can hold.
 - **New one-shot**: a clapperboard on the board resets the world for the next
   session — one confirm, then every PC is deleted, the chat log is cleared,
   NPCs leave the board but are kept, and a fresh character is created for

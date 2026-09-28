@@ -398,6 +398,29 @@ try {
   const wcard = await lastCard(gm);
   check(wcard?.state === "withdrawn" && !wcard.button, `clicking the pending DS withdraws it; its request reads withdrawn (${JSON.stringify(wcard)})`);
 
+  // A DS above the row's pennies cannot be asked; only the pending pill
+  // survives a penny drop, because clicking it is the withdraw.
+  await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 3 }); }, aliceId);
+  await gm.waitForFunction((a) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="4"]`)?.disabled === true, aliceId, { timeout: 10000 }).catch(() => {});
+  const reach = await gm.evaluate((a) => {
+    const pill = (n) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="${n}"]`);
+    return { d3: pill(3).disabled, d4: pill(4).disabled, d5: pill(5).disabled, tip4: pill(4).dataset.tooltip };
+  }, aliceId);
+  check(!reach.d3 && reach.d4 && reach.d5 && /out of reach/.test(reach.tip4), `DS pills above the pennies are disabled (${JSON.stringify(reach)})`);
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="3"]`);
+  await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === 3, aliceId, { timeout: 10000 }).catch(() => {});
+  await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 1 }); }, aliceId);
+  await gm.waitForFunction((a) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="2"]`)?.disabled === true, aliceId, { timeout: 10000 }).catch(() => {});
+  const withdrawable = await gm.evaluate((a) => {
+    const pill = (n) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="${n}"]`);
+    return { pending: pill(3).disabled, lower: pill(1).disabled, mid: pill(2).disabled };
+  }, aliceId);
+  check(!withdrawable.pending && !withdrawable.lower && withdrawable.mid, `the pending pill stays clickable below its pennies (${JSON.stringify(withdrawable)})`);
+  await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="3"]`);
+  await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === null, aliceId, { timeout: 10000 })
+    .then(() => ok("withdrawing an out-of-reach pending DS still works")).catch(() => fail("withdrawing an out-of-reach pending DS still works"));
+  await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 10 }); }, aliceId);
+
   // NPC add via API path (dialog is exercised by hand).
   await gm.evaluate(async () => { await foundry.documents.Actor.create({ name: "The Killer", type: "npc", system: { onBoard: true } }); });
   await gm.waitForFunction(() => [...document.querySelectorAll("#pd-scoreboard tr.pd-row")].some((r) => r.textContent.includes("The Killer")), null, { timeout: 10000 }).catch(() => {});

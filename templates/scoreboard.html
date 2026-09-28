@@ -119,8 +119,8 @@
                             <span class="pd-ds">
                                 {{#each dsOptions}}
                                     <button type="button" class="pd-pill{{#if active}} active{{/if}}" data-action="issueChallenge"
-                                            data-ds="{{n}}" {{#if ../dead}}disabled{{/if}}
-                                            data-tooltip="{{#if active}}{{localize 'PD.Board.ClearChallenge' ds=n}}{{else}}{{localize 'PD.Board.Challenge' ds=n chance=chance}}{{/if}}">{{n}}</button>
+                                            data-ds="{{n}}" {{#if disabled}}disabled{{/if}}
+                                            data-tooltip="{{#if active}}{{localize 'PD.Board.ClearChallenge' ds=n}}{{else if impossible}}{{localize 'PD.Board.ChallengeImpossible' ds=n}}{{else}}{{localize 'PD.Board.Challenge' ds=n chance=chance}}{{/if}}">{{n}}</button>
                                 {{/each}}
                             </span>
                             <span class="pd-adjust">

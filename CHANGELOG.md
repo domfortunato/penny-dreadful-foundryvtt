@@ -6,6 +6,10 @@ one, writes the section into the release tag, and the Release Creation workflow
 creates the release with it. `npm run release X.Y.Z -- --dry-run` shows the exact
 body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 
+## Unreleased
+
+- The Director can no longer ask for a DS higher than the pennies a row holds — such a flip cannot be met. The button is greyed out with a tooltip saying why, and the pending DS stays clickable so it can still be withdrawn even after pennies drop below it
+
 ## 0.2.0
 
 - The Director can take characters off the board and put them back: every row now has a remove button, and the toolbar gains an Add-a-character button beside Add-an-NPC (pick an off-board actor, or type a name to create one). A removed row's pending ask is withdrawn, and its return is one click. Nothing is ever deleted, and the tooltips say so

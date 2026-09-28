@@ -122,7 +122,13 @@ junction to this folder; the local 14.365 app runs on :30000.
   raise it to 10, and odds columns for DS 6-10, were tried and removed on
   Dom's ruling; `PennyActorModel.migrateData` drops a challenge left pending
   above 5 from that time, on load and create only: core migrates update
-  input too (`partial`), and an update must not become a clear.
+  input too (`partial`), and an update must not become a clear. Also Dom's
+  ruling (2026-09-28): a DS above the row's CURRENT PENNIES cannot be asked
+  (it cannot be met — the odds table shows a dash there). `issueChallenge`
+  refuses it with a notice and the pill is disabled, EXCEPT the pending
+  pill, which stays clickable even when pennies have since dropped below
+  it: clicking the pending DS is the withdraw, and the refusal is checked
+  after the withdraw branch for the same reason.
 - A NUMBERFIELD CLAMPS, IT DOES NOT REJECT. In 14.365 `NumberField._cleanType`
   (`common/data/fields.mjs`) rounds a value into its min/max when cleaning,
   on load and on every write; validation only catches non-numbers. The

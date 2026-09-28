@@ -235,9 +235,18 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       canFlip: ds !== null && canEdit && !sys.dead && !flipping,
       flipping,
       spotlight: actor.id === spotlightId,
-      dsOptions: Array.from({ length: MAX_DS }, (_, i) => ({
-        n: i + 1, active: i + 1 === ds, chance: percent(chanceOfSuccess(sys.pennies, i + 1), game.i18n.lang),
-      })),
+      // A DS above the row's pennies is out of reach and its pill is disabled,
+      // except the pending one: clicking that is how the Director withdraws.
+      dsOptions: Array.from({ length: MAX_DS }, (_, i) => {
+        const n = i + 1;
+        return {
+          n,
+          active: n === ds,
+          impossible: n > sys.pennies,
+          disabled: sys.dead || (n > sys.pennies && n !== ds),
+          chance: percent(chanceOfSuccess(sys.pennies, n), game.i18n.lang),
+        };
+      }),
     };
   }
 
