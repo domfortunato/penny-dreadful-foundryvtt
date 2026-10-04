@@ -67,6 +67,10 @@ export const TEMPLATES = {
   flipCard: `${ROOT}/templates/chat/flip-card.html`,
   requestCard: `${ROOT}/templates/chat/flip-request.html`,
   addActor: `${ROOT}/templates/dialog/add-actor.html`,
+  // The How To's body is GENERATED from docs/how-to-{system,module}.md by
+  // tools/import/how-to.mjs; each flavor shows its own.
+  howTo: `${ROOT}/templates/how-to/${IS_MODULE ? "module" : "system"}.html`,
+  howToFooter: `${ROOT}/templates/how-to-footer.html`,
 };
 
 /**

@@ -48,7 +48,11 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   world settings (players' button just reopens their own board, Alt+B
   too), ready opens the board only when the toggle is on, and
   `onMiniGameToggled` opens/force-closes on every client; auto-create
-  defaults OFF (a guest never seeds actors because someone connected);
+  is on but acts ONLY WHILE THE MINI GAME RUNS (Dom, 2026-10-03: a guest
+  never seeds actors because someone connected — starting the game is the
+  opt-in, and then every connected player without a PC gets one, as does
+  anyone connecting while it runs; `ensureCharacterFor` checks
+  `miniGameActive()`);
   the one-shot reset deletes only messages carrying our flags — never
   `deleteAll` in a host campaign — with its own dialog body and tooltip
   keys (OneShotBodyModule*, NewOneShotModule, Controls.MiniGame). The
@@ -285,12 +289,42 @@ junction to this folder; the local 14.365 app runs on :30000.
   - SCENE-CONTROL TOOLS ARE DEAD WITHOUT A READY CANVAS (client
     scene-controls.mjs:593 `if (!canvas.ready) return` before any tool
     runs): no active scene, or the canvas disabled, and the coin does
-    nothing. So the Director has three ways to start/end the mini game,
-    all through `setMiniGame` (scoreboard.js): the coin (a TOGGLE whose
-    `active` is the setting; `onMiniGameToggled` re-renders the controls
-    with `{reset: true}` so it follows), the power button on the board's
-    toolbar (Alt+B opens the board with the game off), and the setting,
-    now `config: true` in Configure Settings.
+    nothing. So START/END lives in the board window's ⋮ header menu
+    (`_getHeaderControls`, Director only — core rebuilds the menu on every
+    open, so its Start/End label is always current; Alt+B opens the board
+    with the game off) and in the setting, `config: true` in Configure
+    Settings, both through `setMiniGame` (scoreboard.js). Dom (2026-10-03):
+    a toolbar power button was too prominent — never put Start/End back on
+    the toolbar. ENDING CONFIRMS (End / Cancel), and a cancelled End says
+    "still running" — Enter, Escape and the X all cancel, and Dom once
+    believed he had ended a game he had only cancelled. Starting does not
+    confirm; the settings form is not confirmed (it is deliberate).
+  - THE COIN NEVER ENDS THE GAME (Dom, 2026-10-03). It was a toggle, and a
+    Director who closed their board with its X and clicked the coin to get
+    it back was asked to end the game for everyone; Cancel left the board
+    shut. It is a plain BUTTON now (`directorStarts` in scoreboard.js),
+    decided at click time from the real setting: a module Director who may
+    write world settings STARTS a stopped game with it (one click, no
+    confirm); everyone else, and a Director while the game runs, gets
+    their own board back. Its tooltip says which ("Start…" / "Open…") and
+    is refreshed by `onMiniGameToggled`'s reset render. Ending is only in
+    the ⋮ menu and Configure Settings. Never make it a toggle again.
+  - THE HOW TO (`module/how-to.js`): opens by itself only the FIRST time
+    a person joins (per-user `howToSeen`), then only if they ticked "Show
+    this next time" (per-user `showHowTo`, UNTICKED by default — Dom: it
+    came back on every F5); the board's ? button opens it any time. Both
+    settings are `scope: "user"`, so they follow the person. SOURCE IS
+    `docs/how-to-{system,module}.md` — Dom's to edit. `npm run
+    import:howto` (also chained into `import:rules`) generates BOTH the
+    window's bodies (`templates/how-to/*.html`, each flavor its own
+    guide) and a compendium journal, "How to Play Penny Dreadful", one
+    page per guide (both flavors ship the same packs, so the journal
+    carries both, named for where each applies); then `npm run
+    build:packs` with Foundry stopped. Never edit the generated templates
+    or YAML. Who sees it by itself: everyone in the system; in the module
+    the Director at ready and a player only once the game opens their
+    board — never while no game runs. Interface instructions, not game
+    text.
   - A MODULE'S TRANSLATIONS MERGE AFTER THE SYSTEM'S (client
     localization.mjs:292-319), so any key the module shares with a host
     overwrites the host's. The bare `TYPES.Actor.character`/`npc` labels

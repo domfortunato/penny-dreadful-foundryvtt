@@ -15,6 +15,8 @@ import { clearCoinsEverywhere, coinsHeld, diceModuleAvailable, toggleHoldCoins }
 
 import { chanceOfSuccess, percent } from "./odds.js";
 import { openOdds, openRules } from "./rules.js";
+import { maybeShowHowTo, openHowTo } from "./how-to.js";
+import { ensureCharacterFor } from "./players.js";
 import { startNewOneShot } from "./director.js";
 import { getSpotlight, nextSpotlight, setSpotlight } from "./spotlight.js";
 
@@ -60,6 +62,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       nextSpotlight: PDScoreboard.#onNextSpotlight,
       openRules: PDScoreboard.#onOpenRules,
       openOdds: PDScoreboard.#onOpenOdds,
+      openHowTo: PDScoreboard.#onOpenHowTo,
       holdCoins: PDScoreboard.#onHoldCoins,
       clearCoins: PDScoreboard.#onClearCoins,
       addCharacter: PDScoreboard.#onAddCharacter,
@@ -85,6 +88,27 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     // an ordinary, closable one — the toggle and the keybinding reopen it.
     if (!IS_MODULE) frame.querySelector('button[data-action="close"]')?.remove();
     return frame;
+  }
+
+  /**
+   * The module Director's Start/End lives in the window's ⋮ header menu —
+   * out of sight during play (Dom: a toolbar power button was too
+   * prominent). Core rebuilds the menu each time it opens
+   * (application.mjs `onOpen`) and localizes the label, so the entry always
+   * says what a click will do. Ending asks first (setMiniGame).
+   * @override
+   */
+  _getHeaderControls() {
+    const controls = super._getHeaderControls();
+    if (IS_MODULE && game.user.isGM && canSetWorld()) {
+      const on = miniGameActive();
+      controls.push({
+        action: "toggleMiniGame",
+        icon: on ? "fa-solid fa-power-off" : "fa-solid fa-play",
+        label: on ? "PD.Board.MiniGameEnd" : "PD.Board.MiniGameStart",
+      });
+    }
+    return controls;
   }
 
   /**
@@ -197,11 +221,6 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       // The module's one-shot reset touches only its own messages, and its
       // tooltip must not promise the host's chat log.
       oneShotTooltip: IS_MODULE ? "PD.Board.NewOneShotModule" : "PD.Board.NewOneShot",
-      // Module only: the Director's Start/End for the whole table, on the
-      // board itself — the scene-control coin is dead without a canvas.
-      miniGameControl: IS_MODULE && isDirector && canSetWorld(),
-      miniGameOn: miniGameActive(),
-      miniGameTooltip: miniGameActive() ? "PD.Board.MiniGameEnd" : "PD.Board.MiniGameStart",
       // The spotlight is a world setting: its controls show only to a Director who may write it.
       canSpotlight: isDirector && canSetWorld(),
       // Only when Dice So Nice happens to be active; never required.
@@ -303,6 +322,10 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     await openRules();
   }
 
+  static async #onOpenHowTo() {
+    await openHowTo();
+  }
+
   static async #onOpenOdds() {
     await openOdds();
   }
@@ -378,25 +401,64 @@ export const miniGameActive = () => {
 
 /**
  * Start or end the mini game (module flavor, a Director who may write world
- * settings). Three doors lead here, because the scene-control coin is dead
- * whenever the canvas is not ready (no active scene, or the canvas disabled —
- * core's SceneControls ignores every tool click then): the coin, the
- * Start/End button on the board's toolbar (the board opens with Alt+B at any
- * time), and the setting itself in Configure Settings.
+ * settings). The entry in the board's ⋮ header menu starts and ends it (the
+ * board opens with Alt+B at any time, canvas or not — the scene-control coin
+ * is dead whenever the canvas is not ready); the coin can START it but never
+ * ends it; Configure Settings writes the setting directly (the settings form
+ * is deliberate enough).
+ *
+ * ENDING ASKS FIRST (Dom, 2026-10-03): it closes every player's board
+ * mid-scene. A choice, in the house style — future tense, End / Cancel,
+ * and core's confirm makes Cancel the default so Enter never ends it.
+ * Starting just opens boards, so it does not ask. Resolves true when the
+ * game changed state.
  */
 export const setMiniGame = async (active) => {
-  if (!IS_MODULE || !canSetWorld() || miniGameActive() === active) return;
+  if (!IS_MODULE || !canSetWorld() || miniGameActive() === active) return false;
+  if (!active) {
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: "PD.Dialog.EndMiniGameTitle", icon: "fa-solid fa-power-off" },
+      classes: ["penny-dreadful", "pd-dialog"],
+      content: `<p>${t("PD.Dialog.EndMiniGameBody")}</p>`,
+      yes: { label: "PD.Dialog.EndMiniGame", icon: "fa-solid fa-power-off" },
+      no: { label: "PD.Dialog.Cancel" },
+      rejectClose: false,
+      renderOptions: boardWindowOptions(),
+    });
+    if (confirmed !== true) {
+      // Enter, Escape and the dialog's X all cancel (by design), so a
+      // Director can miss that nothing happened — say so (Dom thought he
+      // had ended a game that was still running).
+      ui.notifications.info("PD.Notify.MiniGameStillRunning");
+      return false;
+    }
+  }
   await game.settings.set(NS, "miniGameActive", active);
+  return true;
 };
 
 /**
  * The setting's onChange, on every client: the board follows it, and the
- * coin's pressed state is re-read (a reset render re-runs
- * getSceneControlButtons, where `active` is taken from the setting).
+ * coin's tooltip is re-read (a reset render re-runs getSceneControlButtons:
+ * "Start…" for a Director while the game is off, "Open…" otherwise).
+ *
+ * On start, in the module the game is now "on" for everyone at the table:
+ * every connected player without a PC gets one (ensureCharacterFor keeps it
+ * to the one designated GM, and honours the auto-create setting), and a
+ * player sees the How To the first time their board opens (not before — a
+ * guest shows nothing while no game is running).
  */
 export const onMiniGameToggled = (active) => {
-  if (active) openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
-  else if (scoreboard?.rendered) scoreboard.close({ force: true }).catch((err) => warn("the scoreboard failed to close:", err));
+  if (active) {
+    openScoreboard()
+      .then(() => maybeShowHowTo())
+      .catch((err) => warn("the scoreboard failed to open:", err));
+    for (const user of game.users) {
+      if (user.active) ensureCharacterFor(user).catch((err) => warn("auto-create failed:", err));
+    }
+  } else if (scoreboard?.rendered) {
+    scoreboard.close({ force: true }).catch((err) => warn("the scoreboard failed to close:", err));
+  }
   ui.controls?.render({ reset: true });
 };
 
@@ -429,47 +491,44 @@ export const registerScoreboardHooks = () => {
 };
 
 /**
- * A tool under Token controls. In the system it is a button that reopens a
- * board that was somehow lost. In the module, for a Director who may write
- * world settings, it is a TOGGLE whose pressed state IS the mini game (core
- * draws `active`; onChange gets the new state) — a stateless button flipped
- * the setting blind, so a Director who closed their own board and clicked
- * to get it back ended the game for everyone. A player's is a button that
- * reopens their own board. A tool may not be both toggle and button.
- * Scene-control tools only work while the canvas is ready — see setMiniGame
- * for the other two ways in.
+ * The coin, a button under Token controls: it gets you a board, and in the
+ * module it starts a stopped game for the Director (see directorStarts
+ * below). It never ends one. Scene-control tools only work while the
+ * canvas is ready — Alt+B and the board's ⋮ menu work without one.
  */
 export const registerSceneControl = () => {
   Hooks.on("getSceneControlButtons", (controls) => {
     const tools = controls?.tokens?.tools;
     if (!tools) return;
-    const gmToggle = IS_MODULE && game.user.isGM && canSetWorld();
     // In a host campaign the tool must say WHOSE board this is (Dom's
     // ruling: the tooltip names Penny Dreadful); in our own system the
-    // plain "Scoreboard" is the whole world's one board.
-    const common = {
+    // plain "Scoreboard" is the whole world's one board. The title is read
+    // here, so onMiniGameToggled re-renders the controls on every change.
+    tools.pdScoreboard = {
       name: "pdScoreboard",
       icon: "fa-solid fa-coins",
       order: Object.keys(tools).length,
       visible: true,
+      button: true,
+      title: directorStarts() ? "PD.Controls.MiniGame"
+        : IS_MODULE ? "PD.Controls.ScoreboardModule" : "PD.Controls.Scoreboard",
+      // Decided at click time, from the REAL game state.
+      onChange: () => {
+        const opening = directorStarts() ? setMiniGame(true) : openScoreboard();
+        opening.catch((err) => warn("the coin failed:", err));
+      },
     };
-    tools.pdScoreboard = gmToggle
-      ? {
-        ...common,
-        title: "PD.Controls.MiniGame",
-        toggle: true,
-        active: miniGameActive(),
-        onChange: (event, active) => {
-          setMiniGame(active).catch((err) => warn("the mini-game toggle failed:", err));
-        },
-      }
-      : {
-        ...common,
-        title: IS_MODULE ? "PD.Controls.ScoreboardModule" : "PD.Controls.Scoreboard",
-        button: true,
-        onChange: () => {
-          openScoreboard().catch((err) => warn("the scoreboard failed to open:", err));
-        },
-      };
   });
 };
+
+/**
+ * THE COIN NEVER ENDS THE GAME (Dom, 2026-10-03). It was a toggle; then a
+ * Director who closed their board with its X and clicked the coin to get it
+ * back was asked to end the game for everyone — and Cancel left the board
+ * shut. Now it always gets you a board: for a module Director who may write
+ * world settings, while the game is off it STARTS it (one click, no confirm,
+ * boards open everywhere); otherwise — a player, the system, or a game
+ * already running — it opens your own board. Ending lives only in the
+ * board's ⋮ menu (and Configure Settings), behind its confirm.
+ */
+const directorStarts = () => IS_MODULE && game.user.isGM && canSetWorld() && !miniGameActive();

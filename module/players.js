@@ -1,5 +1,7 @@
 import { IS_MODULE, NS, TYPE_PC, warn } from "./constants.js";
 import { ownerUserOf } from "./actor.js";
+// A cycle (scoreboard → players → scoreboard), safe: both are only called at run time.
+import { miniGameActive } from "./scoreboard.js";
 
 const creating = new Set();
 
@@ -11,11 +13,17 @@ const creating = new Set();
  * explicit Director action (the one-shot reset): whoever clicked must be
  * the client that recreates, or a non-designated GM's reset would delete
  * every row and rebuild none. The auto-create setting still rules.
+ *
+ * In the MODULE it acts only while the mini game is running (Dom,
+ * 2026-10-03): a guest adds nothing to a host campaign until the Director
+ * starts the game — then every connected player without a PC gets one
+ * (onMiniGameToggled), and so does anyone who connects while it runs.
  */
 export const ensureCharacterFor = async (user, { force = false } = {}) => {
   if (!user || user.isGM) return;
   if (!force && game.users.activeGM !== game.user) return;
   if (!game.settings.get(NS, "autoCreateCharacters")) return;
+  if (IS_MODULE && !miniGameActive()) return;
   const OWNER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
   // An explicit entry, not `ownership.default`: a character everyone may edit is
   // nobody's own row, and must not stop this player getting one.

@@ -19,6 +19,7 @@ import { registerPlayerHooks } from "./players.js";
 import { registerChatHooks } from "./chat.js";
 import { registerJournalHooks } from "./rules.js";
 import { miniGameActive, openScoreboard, registerSceneControl, registerScoreboardHooks } from "./scoreboard.js";
+import { maybeShowHowTo } from "./how-to.js";
 
 /**
  * The module flavor in a world that runs the Penny Dreadful SYSTEM would boot
@@ -81,6 +82,11 @@ export const boot = () => {
     // The system's board is always on; the module's follows the Director's
     // mini-game toggle (miniGameActive is simply true in the system flavor).
     if (miniGameActive()) await openScoreboard();
+    // The How To at startup, while this user still wants it: everyone in
+    // the system; in the module the Director, and a player only when the
+    // game is already running (their board just opened) — a guest shows
+    // players nothing while no game runs (onMiniGameToggled covers the rest).
+    if (!IS_MODULE || game.user.isGM || miniGameActive()) await maybeShowHowTo();
     if (RELABEL_GM) await renameDirector();
     log("ready");
   });

@@ -18,11 +18,16 @@
  * namespaced beside the host's; the board does NOT open until the Director's
  * mini-game toggle goes on, then opens on every client and closes everywhere
  * when it goes off; the module's board is an ordinary closable window and
- * Alt+B brings it back; no character is auto-created for a connecting player
- * (module default off); a PC added from the board carries the namespaced
- * type, takes a DS and flips from the chat card; the one-shot reset deletes
- * only the mini game's own actors and messages — the host's actor and chat
- * message survive — and creates no fresh characters; the rules journal opens
+ * Alt+B brings it back; Start/End live in the board's ⋮ menu (Director
+ * only) and ending asks first; the coin starts a stopped game for the
+ * Director and otherwise brings the board back — it never ends one; no character is
+ * auto-created while the game is off, and starting it gives the connected
+ * player one; the How To opens for the Director at startup and for a player
+ * only once the game opens their board; a PC added from the board carries
+ * the namespaced type, takes a DS and flips from the chat card; the one-shot
+ * reset deletes only the mini game's own actors and messages — the host's
+ * actor and chat message survive — and makes the connected player a fresh
+ * PC (the game is running); the rules journal opens
  * from its own pack with the pd-journal styling (the content flag read); the
  * host's GM role label and account name are never touched; and disabling the
  * module leaves the world loadable.
@@ -208,10 +213,26 @@ try {
   }
   check(await gm.evaluate((id) => game.modules.get(id)?.active === true, MODULE_ID), "the module is active");
 
+  // The Director sees the module's own How To at startup (re-armed first: a
+  // crashed run may have left this user's "Show next time" off).
+  if (!(await gm.evaluate((id) => game.settings.get(id, "showHowTo"), MODULE_ID))) {
+    await gm.evaluate((id) => game.settings.set(id, "showHowTo", true), MODULE_ID);
+    await gm.reload({ waitUntil: "networkidle" });
+    await gm.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90000 });
+    await dismissChrome(gm);
+  }
+  await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 10000 })
+    .then(() => ok("the How To opened at startup for the Director")).catch(() => fail("the How To opened at startup for the Director"));
+  const guide = await gm.evaluate(() => [...document.querySelectorAll("#pd-how-to .pd-how-to-body h2")].map((h) => h.textContent.trim()));
+  check(guide.includes("The Mini Game") && guide.includes("For Players"), `the module's own How To (${guide.join(" / ")})`);
+  await gm.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-close")?.click());
+
   // Deterministic start: a previous run leaves the toggle on, a benched NPC,
-  // keepsakes and Bob behind. Bob may stay; the rest goes.
+  // keepsakes and Bob behind. Bob may stay; the rest goes. Auto-create is
+  // pinned to its new default, ON (it acts only while the game runs).
   await gm.evaluate(async (id) => {
     await game.settings.set(id, "miniGameActive", false);
+    await game.settings.set(id, "autoCreateCharacters", true);
     const actors = game.actors
       .filter((a) => a.type.startsWith(`${id}.`) || a.name === "Host Keepsake")
       .map((a) => a.id);
@@ -230,21 +251,23 @@ try {
     hostModels: Object.keys(CONFIG.Actor.dataModels).filter((t) => !t.startsWith(id) && t !== "base").length,
     pcLabel: game.i18n.localize(`TYPES.Actor.${id}.character`),
     boardOpen: !!foundry.applications.instances.get("pd-scoreboard")?.rendered,
-    autoCreate: game.settings.get(id, "autoCreateCharacters"),
+    autoCreateDefault: game.settings.settings.get(`${id}.autoCreateCharacters`)?.default,
     miniGame: game.settings.get(id, "miniGameActive"),
     gmLabel: game.i18n.localize("USER.RoleGamemaster"),
     pack: !!game.packs.get(`${id}.rules`),
     packSize: game.packs.get(`${id}.rules`)?.index.size ?? 0,
+    howToJournal: !!game.packs.get(`${id}.rules`)?.index.find((e) => e.name === "How to Play Penny Dreadful"),
   }), MODULE_ID);
   check(s2.system === HOST_SYSTEM, `the host system is ${s2.system}`);
   check(s2.types.length === 2 && s2.models.length === 2, `both sub-types registered namespaced (${s2.types.join(", ")})`);
   check(s2.hostModels > 0, `the host's own data models survive the merge (${s2.hostModels} of them)`);
   check(s2.pcLabel === "Character (Penny Dreadful)", `the PC type label localizes (${s2.pcLabel})`);
   check(s2.boardOpen === false, "the board stays closed while the mini game is off");
-  check(s2.autoCreate === false, "auto-create defaults OFF in the module");
+  check(s2.autoCreateDefault === true, "auto-create defaults ON in the module (it acts only while the game runs)");
   check(s2.miniGame === false, "the mini-game toggle starts off");
   check(s2.gmLabel !== "The Director", `the host's GM role label is untouched (${s2.gmLabel})`);
-  check(s2.pack && s2.packSize === 2, `the rules pack is ${MODULE_ID}.rules with ${s2.packSize} entries`);
+  check(s2.pack && s2.packSize === 3 && s2.howToJournal,
+    `the rules pack is ${MODULE_ID}.rules with ${s2.packSize} entries, the How To among them`);
 
   // The host's own furniture, which the one-shot must not touch.
   const hostBaseline = await gm.evaluate(async (id) => {
@@ -297,36 +320,63 @@ try {
   console.log("\nStage 3: Bob joins; nothing is seeded for him");
   await gm.waitForTimeout(2000);
   check(await gm.evaluate((id) => !game.actors.find((a) => a.type === `${id}.character`), MODULE_ID),
-    "no character was auto-created for the connecting player");
+    "no character was auto-created for the connecting player while the game is off");
+  check(!(await bob.evaluate(() => !!foundry.applications.instances.get("pd-how-to")?.rendered)),
+    "a player is shown no How To while no game runs");
+  // Arm Bob's own "Show next time" (a per-user setting only he can write),
+  // so the start below shows him the How To.
+  await bob.evaluate((id) => game.settings.set(id, "showHowTo", true), MODULE_ID);
+
+  // The Director's ⋮ header menu, by real clicks: open it, click the entry.
+  const menuEntries = async (page) => {
+    await page.click('#pd-scoreboard .header-control[data-action="toggleControls"]');
+    await page.waitForSelector("#context-menu .context-item", { timeout: 5000 });
+    return page.$$eval("#context-menu .context-item", (els) => els.map((e) => e.textContent.trim()));
+  };
+  const clickMenu = (page, label) => page.click(`#context-menu .context-item:has-text("${label}")`);
+  const dialogButton = (page, action) => page.evaluate((a) => {
+    [...document.querySelectorAll(".pd-dialog")].pop()?.querySelector(`button[data-action="${a}"]`)?.click();
+  }, action);
+  const gameOn = (id) => gm.evaluate((m) => game.settings.get(m, "miniGameActive"), id);
 
   /* ------------------------------------------------ stage 4: the toggle */
   console.log("\nStage 4: the mini-game toggle");
   const tool = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard ?? null);
   if (tool) {
-    check(tool.title === "PD.Controls.MiniGame" && tool.toggle === true && !tool.button && tool.active === false,
-      `the Director's coin is an on/off toggle showing OFF (${JSON.stringify({ toggle: tool.toggle, active: tool.active })})`);
+    check(tool.button === true && !tool.toggle && tool.title === "PD.Controls.MiniGame",
+      `with the game off, the Director's coin is a button that offers to start it (${tool.title})`);
   } else note("no scene controls without a canvas; the game is started from the board, as a Director would");
 
   // No canvas needed: Alt+B opens the Director's own board while the game is
-  // off, and its power button starts the game for everyone.
+  // off, and the board's ⋮ menu starts the game for everyone. No toolbar
+  // power button any more (Dom: too prominent).
   await gm.keyboard.press("Alt+KeyB");
-  await gm.waitForFunction(() => !!document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]'), null, { timeout: 10000 })
-    .then(() => ok("with the game off, Alt+B opens the Director's board with a Start button"))
-    .catch(() => fail("with the game off, Alt+B opens the Director's board with a Start button"));
+  await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
+    .then(() => ok("with the game off, Alt+B opens the Director's own board")).catch(() => fail("with the game off, Alt+B opens the Director's own board"));
+  check(!(await gm.evaluate(() => !!document.querySelector('#pd-scoreboard [data-action="toggleMiniGame"]'))),
+    "the board's toolbar carries no power button");
   check(!(await boardRendered(bob)), "Bob's board stays shut until the game starts");
-  await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]').click());
+  const offMenu = await menuEntries(gm);
+  check(offMenu.includes("Start the Penny Dreadful Mini Game"), `the ⋮ menu offers Start (${offMenu.join(" / ")})`);
+  await clickMenu(gm, "Start the Penny Dreadful Mini Game");
   await gm.waitForFunction((id) => game.settings.get(id, "miniGameActive") === true, MODULE_ID, { timeout: 10000 })
-    .then(() => ok("the board's power button started the mini game")).catch(() => fail("the board's power button started the mini game"));
+    .then(() => ok("Start from the ⋮ menu started the mini game, no confirm")).catch(() => fail("Start from the ⋮ menu started the mini game, no confirm"));
   await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
     .then(() => ok("toggle on: the board is open for the Director")).catch(() => fail("toggle on: the board is open for the Director"));
   await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
     .then(() => ok("toggle on: the board opened for Bob")).catch(() => fail("toggle on: the board opened for Bob"));
-  await gm.waitForFunction(
-    () => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]')?.getAttribute("aria-pressed") === "true",
-    null, { timeout: 5000 },
-  ).then(() => ok("the power button now reads as End")).catch(() => fail("the power button now reads as End"));
-  const toolOn = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard?.active ?? null);
-  if (toolOn !== null) check(toolOn === true, "the coin's pressed state followed the setting");
+  await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 10000 })
+    .then(() => ok("Bob sees the How To the first time the game opens his board")).catch(() => fail("Bob sees the How To the first time the game opens his board"));
+  await bob.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-close")?.click());
+  await gm.waitForFunction((id) => {
+    const bob = game.users.getName("Bob");
+    return game.actors.some((a) => a.type === `${id}.character` && a.ownership[bob.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+  }, MODULE_ID, { timeout: 15000 })
+    .then(() => ok("starting the game gave the connected player Bob a PC")).catch(() => fail("starting the game gave the connected player Bob a PC"));
+  const toolOn = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard?.title ?? null);
+  if (toolOn !== null) check(toolOn === "PD.Controls.ScoreboardModule", `with the game on, the coin offers the board, not an end (${toolOn})`);
+  const bobEntries = await bob.evaluate(() => (foundry.applications.instances.get("pd-scoreboard")?._getHeaderControls() ?? []).map((c) => c.label));
+  check(!bobEntries.some((l) => /MiniGame/.test(l)), `a player's ⋮ menu has no Start/End (${bobEntries.join(" / ")})`);
 
   const closeX = await gm.evaluate(() => {
     const x = document.getElementById("pd-scoreboard")?.querySelector('.header-control[data-action="close"]');
@@ -344,13 +394,54 @@ try {
   await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
     .then(() => ok("Alt+B brings Bob's board back")).catch(() => fail("Alt+B brings Bob's board back"));
 
-  await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="toggleMiniGame"]').click());
+  // Ending asks first. Cancel changes nothing; End closes every board.
+  const onMenu = await menuEntries(gm);
+  check(onMenu.includes("End the Penny Dreadful Mini Game"), `with the game on, the ⋮ menu offers End (${onMenu.join(" / ")})`);
+  await clickMenu(gm, "End the Penny Dreadful Mini Game");
+  await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="no"]'), null, { timeout: 5000 })
+    .then(() => ok("End asks first")).catch(() => fail("End asks first"));
+  const endBody = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop()?.querySelector(".window-content")?.textContent ?? "");
+  check(/will close/.test(endBody) && /Nothing is deleted/.test(endBody), `the end confirm says what will happen (${endBody.replace(/\s+/g, " ").trim().slice(0, 90)})`);
+  await dialogButton(gm, "no");
+  await gm.waitForTimeout(800);
+  check((await gameOn(MODULE_ID)) === true && (await boardRendered(bob)), "Cancel keeps the game on and Bob's board open");
+  check(await gm.evaluate(() => /still running/.test(document.querySelector("#notifications")?.textContent ?? "")),
+    "a cancelled End says the game is still running");
+  await menuEntries(gm);
+  await clickMenu(gm, "End the Penny Dreadful Mini Game");
+  await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="yes"]'), null, { timeout: 5000 });
+  await dialogButton(gm, "yes");
   await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
-    .then(() => ok("toggle off: the board closed for the Director")).catch(() => fail("toggle off: the board closed for the Director"));
+    .then(() => ok("End: the board closed for the Director")).catch(() => fail("End: the board closed for the Director"));
   await bob.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
-    .then(() => ok("toggle off: the board closed for Bob")).catch(() => fail("toggle off: the board closed for Bob"));
-  await gm.evaluate((id) => game.settings.set(id, "miniGameActive", true), MODULE_ID);
+    .then(() => ok("End: the board closed for Bob")).catch(() => fail("End: the board closed for Bob"));
+  // Restart with the coin where there is one: with the game off, the
+  // Director's coin STARTS it — one click, no confirm.
+  if (await gm.evaluate(() => !!document.querySelector('#scene-controls button.tool[data-tool="pdScoreboard"]'))) {
+    await gm.click('#scene-controls button.tool[data-tool="pdScoreboard"]');
+    await gm.waitForFunction((id) => game.settings.get(id, "miniGameActive") === true, MODULE_ID, { timeout: 10000 })
+      .then(() => ok("with the game off, the Director's coin starts it, no confirm")).catch(() => fail("with the game off, the Director's coin starts it, no confirm"));
+  } else {
+    await gm.evaluate((id) => game.settings.set(id, "miniGameActive", true), MODULE_ID);
+  }
   await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 });
+  await bob.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
+    .then(() => ok("…and Bob's board opens again")).catch(() => fail("…and Bob's board opens again"));
+
+  // Dom's report: closing the board with its X, then clicking the coin to
+  // get it back, asked to END the game — and Cancel left the board shut.
+  // The coin never ends the game: it brings the board back.
+  const coin = '#scene-controls button.tool[data-tool="pdScoreboard"]';
+  if (await gm.evaluate((sel) => !!document.querySelector(sel), coin)) {
+    await gm.click('#pd-scoreboard .header-control[data-action="close"]');
+    await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
+      .then(() => ok("the Director's X closes their own board")).catch(() => fail("the Director's X closes their own board"));
+    await gm.click(coin);
+    await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
+      .then(() => ok("with the game running, the coin brings the board back")).catch(() => fail("with the game running, the coin brings the board back"));
+    check(!(await gm.evaluate(() => !!document.querySelector(".pd-dialog"))) && (await gameOn(MODULE_ID)) === true,
+      "…with no end confirm, and the game still running");
+  } else note("no coin on screen without a canvas; Alt+B brings the board back");
 
   /* ----------------------------------------- stage 5: a PC, a DS, a flip */
   console.log("\nStage 5: play a beat of the game");
@@ -443,6 +534,10 @@ try {
   console.log("\nStage 6: the one-shot reset is a guest");
   const before = await gm.evaluate(() => game.messages.size);
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="newOneShot"]').click());
+  await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="yes"]'), null, { timeout: 10000 });
+  const resetText = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop()?.querySelector(".window-content")?.textContent ?? "");
+  check(/fresh character is created/.test(resetText) && /host campaign/.test(resetText),
+    `with the game running and auto-create on, the reset promises fresh PCs and spares the host (${resetText.replace(/\s+/g, " ").trim().slice(0, 120)})`);
   await clickDialogButton(gm, "yes");
   // ONE settle wait folding every end-state condition: the chat clear lands
   // after the actor writes, so a wait on the actors alone reads the message
@@ -456,6 +551,9 @@ try {
   }, [MODULE_ID, hostBaseline.actorId], { timeout: 30000 })
     .then(() => ok("the reset deleted the PC, benched the NPC and spared the host's actor"))
     .catch(() => fail("the reset deleted the PC, benched the NPC and spared the host's actor"));
+  // The fresh PC for the connected player lands last, after the chat clear.
+  await gm.waitForFunction((id) => game.actors.filter((a) => a.type === `${id}.character`).length === 1, MODULE_ID, { timeout: 15000 })
+    .catch(() => {});
   const after = await gm.evaluate((args) => {
     const [id, msgId] = args;
     return {
@@ -463,13 +561,15 @@ try {
       pdMsgs: game.messages.filter((m) => !!m.flags?.[id]).length,
       spotlight: game.settings.get(id, "spotlightActorId"),
       freshPcs: game.actors.filter((a) => a.type === `${id}.character`).length,
+      bobsFresh: game.actors.some((a) => a.type === `${id}.character`
+        && a.ownership[game.users.getName("Bob")?.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER),
       total: game.messages.size,
     };
   }, [MODULE_ID, hostBaseline.msgId]);
   check(after.hostMsg, "the host's chat message survived the reset");
   check(after.pdMsgs === 0, "every mini-game message is gone");
   check(after.spotlight === "", "the spotlight went out");
-  check(after.freshPcs === 0, "no fresh characters were seeded (auto-create is off)");
+  check(after.freshPcs === 1 && after.bobsFresh, `the connected player got one fresh PC (${after.freshPcs} PCs, Bob's: ${after.bobsFresh})`);
   note(`chat went from ${before} to ${after.total} messages`);
 
   /* ----------------------------------------- stage 7: the rules journal */

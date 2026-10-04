@@ -90,6 +90,34 @@ async function joinAs(page, name) {
   return picked;
 }
 
+/**
+ * The How To opens by itself the FIRST time a person joins. Earlier runs
+ * have long since marked this user as having seen it, so make them a
+ * first-timer again (both per-user settings back to their defaults) and
+ * reload. Leaves the window open; the caller closes it.
+ */
+async function expectHowToAtStartup(page, who) {
+  await page.evaluate(async () => {
+    await game.settings.set("penny-dreadful", "howToSeen", false);
+    await game.settings.set("penny-dreadful", "showHowTo", false);
+  });
+  await reloadClient(page);
+  await page.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 10000 })
+    .then(() => ok(`the How To opened by itself on ${who}'s first join`)).catch(() => fail(`the How To opened by itself on ${who}'s first join`));
+}
+async function reloadClient(page) {
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90000 });
+  await dismissChrome(page);
+}
+const howToShown = (page) => page.evaluate(() => !!foundry.applications.instances.get("pd-how-to")?.rendered);
+const setShowNextTime = (page, on) => page.evaluate((v) => {
+  const box = document.querySelector("#pd-how-to .pd-how-to-again");
+  box.checked = v;
+  box.dispatchEvent(new Event("change", { bubbles: true }));
+}, on);
+const closeHowTo = (page) => page.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-close")?.click());
+
 const browser = await chromium.launch({ headless: true });
 const watchdog = setTimeout(async () => { console.error("  FAIL  probe exceeded 360s"); await browser.close().catch(() => {}); process.exit(1); }, 360000);
 watchdog.unref();
@@ -101,6 +129,20 @@ try {
   const gmErrors = watchErrors(gm, "GM");
   const gmName = await joinAs(gm, null);
   console.log(`\nStage 1: joined as "${gmName}"`);
+
+  await expectHowToAtStartup(gm, "the Director");
+  const guide = await gm.evaluate(() => {
+    const body = document.querySelector("#pd-how-to .pd-how-to-body");
+    return {
+      headings: [...(body?.querySelectorAll("h2") ?? [])].map((h) => h.textContent.trim()),
+      boxChecked: document.querySelector("#pd-how-to .pd-how-to-again")?.checked,
+    };
+  });
+  check(guide.headings.includes("For the Director") && !guide.headings.includes("The Mini Game") && guide.boxChecked === false,
+    `the system's own How To, with "Show this next time" unticked by default (${guide.headings.join(" / ")})`);
+  await closeHowTo(gm);
+  await gm.waitForFunction(() => !foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 5000 })
+    .then(() => ok("Close closes the How To")).catch(() => fail("Close closes the How To"));
 
   await gm.waitForTimeout(1500);
   // Dice So Nice is never required. When it happens to be active, the hold cycle is exercised too.
@@ -128,6 +170,7 @@ try {
       holdButton: !!el?.querySelector('button[data-action="holdCoins"]'),
       rulesPack: !!game.packs.get("penny-dreadful.rules"),
       rulesIndex: game.packs.get("penny-dreadful.rules")?.index.size,
+      howToJournal: !!game.packs.get("penny-dreadful.rules")?.index.find((e) => e.name === "How to Play Penny Dreadful"),
       sceneTool: !!ui.controls?.controls?.tokens?.tools?.pdScoreboard,
     };
   });
@@ -152,7 +195,8 @@ try {
     `a character's name is cut to 25 on create and on rename (${JSON.stringify(nameCap)})`);
   check(!s1.closeButton, "scoreboard has no close button");
   check(s1.minimizable === false, "scoreboard is not minimizable");
-  check(s1.rulesPack && s1.rulesIndex === 2, `rules pack present with ${s1.rulesIndex} entries (rules and odds)`);
+  check(s1.rulesPack && s1.rulesIndex === 3 && s1.howToJournal,
+    `rules pack present with ${s1.rulesIndex} entries (rules, odds, and the How To)`);
   check(s1.holdButton === dsn, dsn ? "hold button offered with the dice module active" : "no hold button without the dice module");
   check(s1.sceneTool, "scene-control button registered");
 
@@ -220,6 +264,28 @@ try {
   const alErrors = watchErrors(al, "Alice");
   await joinAs(al, "Alice");
   console.log("\nStage 2: joined as Alice");
+
+  // First join only: a refresh does not bring it back (Dom: it came back on
+  // every F5). The board's ? opens it any time; ticking "Show this next
+  // time" brings it back at every startup; unticked again at the end.
+  await expectHowToAtStartup(al, "Alice");
+  await closeHowTo(al);
+  await reloadClient(al);
+  await al.waitForTimeout(2500);
+  check(!(await howToShown(al)), "after the first join, a refresh does not bring the How To back");
+  await al.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="openHowTo"]').click());
+  await al.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 5000 })
+    .then(() => ok("the board's ? button opens the How To any time")).catch(() => fail("the board's ? button opens the How To any time"));
+  await setShowNextTime(al, true);
+  await al.waitForFunction(() => game.settings.get("penny-dreadful", "showHowTo") === true, null, { timeout: 5000 })
+    .then(() => ok("ticking 'Show this next time' saves it")).catch(() => fail("ticking 'Show this next time' saves it"));
+  await reloadClient(al);
+  await al.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 10000 })
+    .then(() => ok("ticked, the How To opens at every startup")).catch(() => fail("ticked, the How To opens at every startup"));
+  check(await al.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-again")?.checked === true), "…with the box shown ticked");
+  await setShowNextTime(al, false);
+  await al.waitForFunction(() => game.settings.get("penny-dreadful", "showHowTo") === false, null, { timeout: 5000 }).catch(() => {});
+  await closeHowTo(al);
 
   // Auto-created character appears (the GM client creates it on userConnected).
   await gm.waitForFunction(() => game.actors.some((a) => a.type === "character" && a.name === "Alice"), null, { timeout: 20000 })

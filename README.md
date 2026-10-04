@@ -75,15 +75,21 @@ Setup, Add-on Modules, Install Module:
 https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
 ```
 
-Enable it in the world, and the Referee starts and ends the mini game with
-the coin button in the token toolbar: the scoreboard opens on every screen,
-and closes everywhere when the interlude ends. As a guest in your campaign
-the module behaves itself — the board is an ordinary closable window
-(Alt+B reopens it), no characters are created unless you turn that on in
-its settings, its "new one-shot" reset deletes only the mini game's own
-actors and chat messages, and your world's GM labels are never touched.
+Enable it in the world, and the GM starts the mini game with the coin
+button in the token toolbar (or, with no scene active, from the board's
+header menu ⋮ — Alt+B opens the board — or Configure Settings): the
+scoreboard opens on every screen. The coin only ever starts the game or
+brings a closed board back; ending is the board's ⋮ menu, which asks first
+and closes the board everywhere. As a guest in your campaign the module behaves
+itself — the board is an ordinary closable window (Alt+B reopens it), PCs
+are created for players only while the mini game is running, its "new
+one-shot" reset deletes only the mini game's own actors and chat messages,
+and your world's labels and players' own characters are never touched.
 Its PCs and NPCs appear in the Actors tab as their own clearly labelled
 types beside your system's.
+
+Both the system and the module open a short **How To** at startup (with a
+"Show this next time" box), and the board's ? button brings it back.
 
 ## Developing
 

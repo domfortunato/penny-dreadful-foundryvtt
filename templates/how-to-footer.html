@@ -1,0 +1,11 @@
+{{!-- The How To's footer: one root element. "Show this next time" writes the
+      per-user setting showHowTo (wired in PDHowTo#_onRender: a change, not a click). --}}
+<div class="pd-how-to-footer">
+    <label class="pd-how-to-check">
+        <input type="checkbox" class="pd-how-to-again" {{checked showNextTime}}>
+        {{localize "PD.HowTo.ShowNextTime"}}
+    </label>
+    <button type="button" class="pd-how-to-close" data-action="closeHowTo">
+        <i class="fa-solid fa-check"></i> {{localize "PD.HowTo.Close"}}
+    </button>
+</div>

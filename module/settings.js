@@ -11,11 +11,26 @@ export const registerSettings = () => {
   });
   game.settings.register(NS, "autoCreateCharacters", {
     name: "PD.Settings.AutoCreate.label",
-    hint: "PD.Settings.AutoCreate.hint",
-    // A guest module must not seed actors into someone's campaign just
-    // because a player connected; the Director opts in. The system keeps
-    // its every-player-gets-a-row default.
-    scope: "world", config: true, type: Boolean, default: !IS_MODULE,
+    // On in both flavors. In the module it acts only while the mini game is
+    // running (ensureCharacterFor), so a guest still seeds nothing into a
+    // host campaign because a player connected — the Director starting the
+    // game is the opt-in (Dom, 2026-10-03). The hint says which.
+    hint: IS_MODULE ? "PD.Settings.AutoCreate.hintModule" : "PD.Settings.AutoCreate.hint",
+    scope: "world", config: true, type: Boolean, default: true,
+  });
+  // The How To window (how-to.js) opens by itself the FIRST time a person
+  // joins (`howToSeen`), and after that only if they ticked "Show this next
+  // time" (`showHowTo`, unticked by default — Dom: a How To at every F5 was
+  // too much). Both per USER, not per browser (client-settings.mjs: a
+  // "user" setting is stored with the user), so they follow a person to any
+  // machine; `showHowTo` is in Configure Settings too.
+  game.settings.register(NS, "showHowTo", {
+    name: "PD.Settings.ShowHowTo.label",
+    hint: "PD.Settings.ShowHowTo.hint",
+    scope: "user", config: true, type: Boolean, default: false,
+  });
+  game.settings.register(NS, "howToSeen", {
+    scope: "user", config: false, type: Boolean, default: false,
   });
   if (IS_MODULE) {
     // The Director's mini-game toggle: on opens the board on every client,

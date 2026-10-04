@@ -19,14 +19,11 @@
                 data-tooltip="{{localize 'PD.Board.Odds'}}" aria-label="{{localize 'PD.Board.Odds'}}">
             <i class="fa-solid fa-percent"></i>
         </button>
+        <button type="button" class="pd-icon" data-action="openHowTo"
+                data-tooltip="{{localize 'PD.Board.HowTo'}}" aria-label="{{localize 'PD.Board.HowTo'}}">
+            <i class="fa-solid fa-circle-question"></i>
+        </button>
         {{#if isDirector}}
-            {{#if miniGameControl}}
-                <button type="button" class="pd-icon{{#if miniGameOn}} on{{/if}}" data-action="toggleMiniGame"
-                        data-tooltip="{{localize miniGameTooltip}}" aria-label="{{localize miniGameTooltip}}"
-                        aria-pressed="{{#if miniGameOn}}true{{else}}false{{/if}}">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
-            {{/if}}
             {{#if diceModule}}
                 <button type="button" class="pd-icon{{#if holdCoins}} on{{/if}}" data-action="holdCoins"
                         data-tooltip="{{#if holdCoins}}{{localize 'PD.Board.HoldCoinsOn'}}{{else}}{{localize 'PD.Board.HoldCoins'}}{{/if}}"
