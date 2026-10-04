@@ -680,6 +680,16 @@ body.theme-dark .pd-flip-card.pd-death .pd-badge {
     margin: 0.3rem 0;
 }
 
+/* The How To's own links (rules, odds, a jump within the guide), in the
+   window and in the journal copy alike. Anchors without an href, so they
+   are styled here, not by the theme. */
+.pd-how-to .pd-link,
+.pd-journal .pd-link {
+    color: var(--color-text-hyperlink, #ff6400);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .pd-how-to .pd-how-to-footer {
     display: flex;
     align-items: center;

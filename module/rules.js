@@ -37,5 +37,24 @@ export const openOdds = () => openJournal(ODDS_JOURNAL_ID, "Odds of Success", { 
 export const registerJournalHooks = () => {
   Hooks.on("renderJournalEntrySheet", (app, element) => {
     element.classList.toggle("pd-journal", !!app.document?.flags?.[CONTENT_NS]?.journal);
+    // The How To journal's links are the How To window's HTML
+    // (tools/import/how-to.mjs), where they are AppV2 actions; here one
+    // delegated listener per sheet element does the same work. Inert on any
+    // other journal.
+    if (element.dataset.pdLinks) return;
+    element.dataset.pdLinks = "1";
+    element.addEventListener("click", (event) => {
+      const link = event.target.closest("a.pd-link[data-pd-open], a.pd-link[data-pd-scroll]");
+      if (!link) return;
+      event.preventDefault();
+      if (link.dataset.pdOpen === "rules") openRules();
+      else if (link.dataset.pdOpen === "odds") openOdds();
+      else if (link.dataset.pdScroll) {
+        // Both guides are pages of ONE journal with the same heading ids, so
+        // the jump stays inside the page that was clicked.
+        (link.closest(".journal-entry-page") ?? element)
+          .querySelector(`#${link.dataset.pdScroll}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   });
 };

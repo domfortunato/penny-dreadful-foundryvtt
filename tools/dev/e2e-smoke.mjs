@@ -145,11 +145,33 @@ try {
     const body = document.querySelector("#pd-how-to .pd-how-to-body");
     return {
       headings: [...(body?.querySelectorAll("h2") ?? [])].map((h) => h.textContent.trim()),
+      miniGame: /mini game/i.test(body?.textContent ?? ""),
+      links: [...(body?.querySelectorAll("a.pd-link") ?? [])].map((a) => a.dataset.action),
+      playersId: !!body?.querySelector("h2#pd-howto-for-players"),
       boxChecked: document.querySelector("#pd-how-to .pd-how-to-again")?.checked,
     };
   });
-  check(guide.headings.includes("For the Director") && !guide.headings.includes("The Mini Game") && guide.boxChecked === false,
-    `the system's own How To, with "Show this next time" unticked by default (${guide.headings.join(" / ")})`);
+  check(guide.headings.includes("For the Director") && guide.headings.includes("For Players") && !guide.miniGame && guide.boxChecked === false,
+    `the system's own How To (no mini game), with "Show this next time" unticked by default (${guide.headings.join(" / ")})`);
+  check(guide.links.includes("openRules") && guide.links.includes("openOdds") && guide.links.includes("scrollTo") && guide.playersId,
+    `the guide links to the rules, the odds and its own players section (${guide.links.join(", ")})`);
+  // A link in the guide opens the rules journal.
+  await gm.evaluate(() => document.querySelector('#pd-how-to a.pd-link[data-action="openRules"]')?.click());
+  await gm.waitForFunction(() => !!document.querySelector(".pd-journal"), null, { timeout: 15000 })
+    .then(() => ok("the guide's rules link opens the rules journal")).catch(() => fail("the guide's rules link opens the rules journal"));
+  await gm.evaluate(() => { for (const a of foundry.applications.instances.values()) if (a.document?.documentName === "JournalEntry") a.close(); });
+  await gm.waitForTimeout(500);
+  // The compendium copy carries the same links; registerJournalHooks works them.
+  await gm.evaluate(async () => {
+    const doc = await fromUuid("Compendium.penny-dreadful.rules.JournalEntry.1uF047qEhdO3LOnJ");
+    await doc.sheet.render({ force: true });
+  });
+  await gm.waitForFunction(() => !!document.querySelector('.pd-journal a.pd-link[data-pd-open="odds"]'), null, { timeout: 15000 }).catch(() => {});
+  await gm.evaluate(() => document.querySelector('.pd-journal a.pd-link[data-pd-open="odds"]')?.click());
+  await gm.waitForFunction(() => [...foundry.applications.instances.values()].some((a) => a.rendered && a.document?.name === "Odds of Success"), null, { timeout: 15000 })
+    .then(() => ok("the journal copy's odds link opens the odds table")).catch(() => fail("the journal copy's odds link opens the odds table"));
+  await gm.evaluate(() => { for (const a of foundry.applications.instances.values()) if (a.document?.documentName === "JournalEntry") a.close(); });
+  await gm.waitForTimeout(500);
   await closeHowTo(gm);
   await gm.waitForFunction(() => !foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 5000 })
     .then(() => ok("Close closes the How To")).catch(() => fail("Close closes the How To"));

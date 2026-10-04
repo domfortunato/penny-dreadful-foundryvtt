@@ -233,8 +233,13 @@ try {
   }
   await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-how-to")?.rendered, null, { timeout: 10000 })
     .then(() => ok("the How To opened at startup for the Director")).catch(() => fail("the How To opened at startup for the Director"));
-  const guide = await gm.evaluate(() => [...document.querySelectorAll("#pd-how-to .pd-how-to-body h2")].map((h) => h.textContent.trim()));
-  check(guide.includes("The Mini Game") && guide.includes("For Players"), `the module's own How To (${guide.join(" / ")})`);
+  const guide = await gm.evaluate(() => ({
+    headings: [...document.querySelectorAll("#pd-how-to .pd-how-to-body h2")].map((h) => h.textContent.trim()),
+    // \s+: the markdown wraps the phrase, and marked keeps the newline.
+    miniGame: /Start the\s+Penny Dreadful\s+Mini Game/.test(document.querySelector("#pd-how-to .pd-how-to-body")?.textContent ?? ""),
+  }));
+  check(guide.headings.includes("For the Director") && guide.headings.includes("For Players") && guide.miniGame,
+    `the module's own How To, with the mini game's Start (${guide.headings.join(" / ")})`);
   await gm.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-close")?.click());
 
   // Deterministic start: a previous run leaves the toggle on, a benched NPC,

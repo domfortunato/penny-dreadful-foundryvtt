@@ -138,7 +138,8 @@ junction to this folder; the local 14.365 app runs on :30000.
   main window); none of that is left.
 - THE HARD RULE ON DICE SO NICE: never required, never configured, never
   assumed. The manifest does not name it. `module/dice-hold.js` is the only
-  file that mentions it, and everything there checks for it first: with it
+  CODE that mentions it (the How To recommends it in Dom's own words,
+  `docs/how-to-*.md`, 2026-10-04), and everything there checks for it first: with it
   active, the board waits for the coins to land and the Director gets hold
   (thumbtack) and clear (broom); without it, no button, no wait, no error.
   Hold works by cancelling the module's own hide timer on every client after
@@ -339,7 +340,17 @@ junction to this folder; the local 14.365 app runs on :30000.
     this next time" (per-user `showHowTo`, UNTICKED by default — Dom: it
     came back on every F5); the board's ? button opens it any time. Both
     settings are `scope: "user"`, so they follow the person. SOURCE IS
-    `docs/how-to-{system,module}.md` — Dom's to edit. `npm run
+    `docs/how-to-{system,module}.md` — Dom's to edit; since 2026-10-04 they
+    are his "Dashboard" text, one body with a flavor's own intro and
+    Director notes. LINKS in them: `[t](pd:rules)` and `[t](pd:odds)` open
+    the shipped journals, `[t](#for-players)` jumps to a heading of the
+    same guide (headings get ids `pd-howto-<slug>`). The importer writes
+    them as `a.pd-link` carrying BOTH a `data-action` (the window's AppV2
+    actions openRules/openOdds/scrollTo in how-to.js) and a `data-pd-*`
+    (one delegated click handler in `registerJournalHooks`, rules.js, for
+    the compendium copy) — not `@UUID`, because the pack is keyed by the
+    running package and both flavors ship the same journal page. An
+    unknown `pd:` link or a dangling `#` anchor fails the import. `npm run
     import:howto` (also chained into `import:rules`) generates BOTH the
     window's bodies (`templates/how-to/*.html`, each flavor its own
     guide) and a compendium journal, "How to Play Penny Dreadful", one

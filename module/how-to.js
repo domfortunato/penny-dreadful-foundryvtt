@@ -1,4 +1,6 @@
 import { NS, TEMPLATES, warn } from "./constants.js";
+// Cycles (how-to → rules → scoreboard → how-to), safe: all called at run time.
+import { openOdds, openRules } from "./rules.js";
 import { renderFromBoard } from "./scoreboard.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -39,6 +41,11 @@ export class PDHowTo extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { width: 640, height: 720 },
     actions: {
       closeHowTo: PDHowTo.#onClose,
+      // The guide's links (tools/import/how-to.mjs writes them): the rules,
+      // the odds, and a jump to one of its own headings.
+      openRules: () => openRules(),
+      openOdds: () => openOdds(),
+      scrollTo: PDHowTo.#onScrollTo,
     },
   };
 
@@ -65,6 +72,10 @@ export class PDHowTo extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onClose() {
     this.close();
+  }
+
+  static #onScrollTo(event, target) {
+    this.element.querySelector(`#${target.dataset.pdScroll}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
