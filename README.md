@@ -15,6 +15,8 @@ Director can set the NPC hand anywhere from five to ten in the game settings
 
 There are no character sheets. There is a scoreboard.
 
+![The Director's view: the board with a PC in the spotlight asked to flip against DS 3 and an NPC below, and in the chat an ask, a successful flip and a pending Flip button](docs/director-pov.png)
+
 ## What the system does
 
 - **The scoreboard**: a compact, semi-transparent window that opens for everyone.
