@@ -31,7 +31,8 @@ The host campaign's own actors and chat are left alone.
 - **A new one-shot:** the clapperboard. It deletes every Penny Dreadful PC
   and the mini game's own chat messages, benches the NPCs, and makes a
   fresh PC for each connected player.
-- In the Actors tab, the mini game's actors are marked (PC-PD) and (NPC-PD).
+- In the Actors tab, the mini game's actors are marked (PC-PD) and (NPC-PD),
+  and new ones go into the Penny Dreadful folder.
 
 ## For Players
 

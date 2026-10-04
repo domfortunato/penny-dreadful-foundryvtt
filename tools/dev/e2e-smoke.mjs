@@ -9,7 +9,9 @@
  *   FOUNDRY_URL=http://192.168.30.125:30000 npm run dev:smoke
  *
  * What it proves: the Director relabel and rename; the board renders for both
- * users with no close control and survives Escape and close(); the book and
+ * users with its X, which closes it, and Alt+B and the coin bring it back
+ * (the same in both flavors); new PCs and NPCs land in the "Penny Dreadful"
+ * actors folder unless created into another; the book and
  * percent buttons open the rules and the odds; Alice's
  * character is auto-created; a DS lands in chat as a card with a Flip button
  * (for Alice and the Director only; no dialog); the flip resolves and
@@ -56,7 +58,15 @@ const check = (cond, m) => (cond ? ok(m) : fail(m));
 function watchErrors(page, label) {
   const errors = [];
   const ignore = [/requires a screen resolution/i, /hardware acceleration/i, /WebGL/i, /THREE\./];
-  page.on("console", (m) => { if (m.type() === "error" && !ignore.some((re) => re.test(m.text()))) errors.push(`[${label}] ${m.text()}`); });
+  // Said where it happens, with the stack when an Error was logged: the
+  // summary at the end cannot tell which step caused it.
+  page.on("console", async (m) => {
+    if (m.type() !== "error" || ignore.some((re) => re.test(m.text()))) return;
+    errors.push(`[${label}] ${m.text()}`);
+    let stack = "";
+    for (const a of m.args()) stack += await a.evaluate((v) => (v instanceof Error ? v.stack : "")).catch(() => "");
+    console.log(`  error [${label}] ${m.text()}${stack ? `\n${stack.split("\n").slice(0, 8).join("\n")}` : ""}`);
+  });
   page.on("pageerror", (e) => { const t = `[${label}] pageerror: ${e.message}`; if (!ignore.some((re) => re.test(t))) errors.push(t); });
   return errors;
 }
@@ -119,7 +129,7 @@ const setShowNextTime = (page, on) => page.evaluate((v) => {
 const closeHowTo = (page) => page.evaluate(() => document.querySelector("#pd-how-to .pd-how-to-close")?.click());
 
 const browser = await chromium.launch({ headless: true });
-const watchdog = setTimeout(async () => { console.error("  FAIL  probe exceeded 360s"); await browser.close().catch(() => {}); process.exit(1); }, 360000);
+const watchdog = setTimeout(async () => { console.error("  FAIL  probe exceeded 480s"); await browser.close().catch(() => {}); process.exit(1); }, 480000);
 watchdog.unref();
 
 try {
@@ -193,25 +203,57 @@ try {
   });
   check(nameCap.created === "Bartholomew Montgomery-Sm" && nameCap.updated === "Bartholomew Montgomery-Sm",
     `a character's name is cut to 25 on create and on rename (${JSON.stringify(nameCap)})`);
-  check(!s1.closeButton, "scoreboard has no close button");
+  check(s1.closeButton, "the board has its X (both flavors close it)");
   check(s1.minimizable === false, "scoreboard is not minimizable");
   check(s1.rulesPack && s1.rulesIndex === 3 && s1.howToJournal,
     `rules pack present with ${s1.rulesIndex} entries (rules, odds, and the How To)`);
   check(s1.holdButton === dsn, dsn ? "hold button offered with the dice module active" : "no hold button without the dice module");
   check(s1.sceneTool, "scene-control button registered");
 
-  // Escape must not close it; close() must be a no-op.
-  await gm.keyboard.press("Escape");
-  await gm.waitForTimeout(300);
-  const afterEsc = await gm.evaluate(async () => {
-    const app = foundry.applications.instances.get("pd-scoreboard");
-    await app.close();
-    return app.rendered && !!document.getElementById("pd-scoreboard");
+  // The board closes like the module's (Dom, 2026-10-03: the board is the
+  // same in both flavors). Its X closes it; Alt+B, and the coin where there
+  // is a canvas, bring it back.
+  const boardUp = () => gm.evaluate(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered);
+  await gm.click('#pd-scoreboard .header-control[data-action="close"]');
+  await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
+    .then(() => ok("the X closes the board")).catch(() => fail("the X closes the board"));
+  await gm.keyboard.press("Alt+KeyB");
+  await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
+    .then(() => ok("Alt+B brings it back")).catch(() => fail("Alt+B brings it back"));
+  const coin = '#scene-controls button.tool[data-tool="pdScoreboard"]';
+  // The coin only works with a ready canvas (scene-controls.mjs:593).
+  if (await gm.evaluate((sel) => canvas.ready && !!document.querySelector(sel), coin)) {
+    await gm.click('#pd-scoreboard .header-control[data-action="close"]');
+    await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 }).catch(() => {});
+    await gm.click(coin);
+    await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
+      .then(() => ok("…and so does the coin")).catch(() => fail("…and so does the coin"));
+  } else console.log("  note  no coin on screen without a canvas; Alt+B brings the board back");
+  if (!(await boardUp())) await gm.keyboard.press("Alt+KeyB");
+  await gm.waitForTimeout(800);
+
+  // Dom (2026-10-03): new PCs and NPCs go in the "Penny Dreadful" actors
+  // folder, not the root; one created into another folder stays there.
+  const filing = await gm.evaluate(async () => {
+    const elsewhere = await foundry.documents.Folder.create({ name: "Smoke Elsewhere", type: "Actor" });
+    const bare = await foundry.documents.Actor.create({ name: "Smoke Filed", type: "npc" });
+    const deadline = Date.now() + 8000;
+    while (!bare.folder && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+    const chosen = await foundry.documents.Actor.create({ name: "Smoke Chosen", type: "npc", folder: elsewhere.id });
+    await new Promise((r) => setTimeout(r, 800));
+    const result = {
+      bare: bare.folder?.name ?? null,
+      flagged: !!bare.folder?.flags?.["penny-dreadful"]?.actorFolder,
+      chosen: chosen.folder?.name ?? null,
+      folders: game.folders.filter((f) => f.type === "Actor" && f.flags?.["penny-dreadful"]?.actorFolder).length,
+    };
+    await foundry.documents.Actor.deleteDocuments([bare.id, chosen.id]);
+    await elsewhere.delete();
+    return result;
   });
-  check(afterEsc, "Escape and close() leave the board on screen");
-  // Core opens the main menu on an Escape that closed nothing; put it away.
-  await gm.evaluate(() => ui.menu?.close?.());
-  await gm.waitForTimeout(400);
+  check(filing.bare === "Penny Dreadful" && filing.flagged && filing.folders === 1,
+    `a new NPC lands in the one "Penny Dreadful" folder (${JSON.stringify(filing)})`);
+  check(filing.chosen === "Smoke Elsewhere", `an NPC created into another folder stays there (${filing.chosen})`);
 
   // Book button opens the rules journal.
   await gm.click('#pd-scoreboard button[data-action="openRules"]');
@@ -314,7 +356,7 @@ try {
     };
   });
   console.log(JSON.stringify(s2, null, 2));
-  check(s2.boardInDom && !s2.closeButton, "Alice sees the board without a close button");
+  check(s2.boardInDom && s2.closeButton, "Alice sees the board with its X");
   check(s2.rows.some((r) => r.includes("Alice")), "Alice's row is on her board");
   check(!s2.directorControls, "Alice sees no Director controls");
   check(s2.owns === true && s2.pennies === 1, "Alice owns her character with 1 penny");
@@ -843,6 +885,7 @@ try {
     messages: game.messages.size,
     oldAlice: !!game.actors.get(oldId),
     characters: game.actors.filter((a) => a.type === "character").map((a) => a.name),
+    filed: game.actors.filter((a) => a.type === "character").every((a) => !!a.folder?.flags?.["penny-dreadful"]?.actorFolder),
     npcActors: game.actors.filter((a) => a.type === "npc").length,
     npcOnBoard: game.actors.some((a) => a.type === "npc" && a.system.onBoard),
     spotlight: game.settings.get("penny-dreadful", "spotlightActorId"),
@@ -853,6 +896,7 @@ try {
     `the one-shot reset cleared the chat, the PCs and the spotlight (${JSON.stringify(reset)})`);
   check(reset.characters.length === 1 && reset.characters[0] === "Alice" && reset.rows === 1,
     `a fresh row was created for the connected player (${reset.characters.join(",")})`);
+  check(reset.filed, "…and filed in the Penny Dreadful folder");
   check(reset.npcActors === npcActorsBefore && !reset.npcOnBoard, "NPC actors are kept, off the board");
 
   /* ------------------------------------------------------------- report */

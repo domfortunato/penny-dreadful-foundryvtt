@@ -26,23 +26,20 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const actorFrom = (target) => game.actors.get(target.closest("[data-actor-id]")?.dataset.actorId);
 
 /**
- * The scoreboard: everyone's pennies, on everyone's screen, all the time.
+ * The scoreboard: everyone's pennies, on everyone's screen.
  *
- * A framed ApplicationV2 so players can drag it, and pop it out into its own
- * browser window with core's Detach control, and nothing else: it does not
- * minimize (`window.minimizable`), and it does not close. Core hard-codes the
- * close button into the frame (`_renderFrame`) and Escape closes every framed
- * app, so the button is removed after the frame renders, `close()` is a no-op
- * unless forced, and the stylesheet hides the control as well. Closing a
- * popped-out window brings the board back to the main one.
+ * A framed ApplicationV2 so players can drag it, pop it out into its own
+ * browser window with core's Detach control, and close it. It does not
+ * minimize (`window.minimizable`). It closes like any window, with its X,
+ * Escape, or by closing a popped-out browser window, in BOTH flavors (Dom,
+ * 2026-10-03: the board behaves the same in the system and the module; the
+ * system's board was fixed open until then). The coins in the Token
+ * controls and Alt+B bring it back.
  */
 export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "pd-scoreboard",
-    // `pd-board-fixed` marks the SYSTEM's board, the one that never closes:
-    // the stylesheet hides the close control only there. The module's board
-    // keeps a visible X (seventh review: an unscoped rule hid it too).
-    classes: ["penny-dreadful", "pd-scoreboard", ...(IS_MODULE ? [] : ["pd-board-fixed"])],
+    classes: ["penny-dreadful", "pd-scoreboard"],
     tag: "div",
     window: {
       title: "PD.Board.Title",
@@ -78,17 +75,7 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
     board: { template: TEMPLATES.scoreboard },
   };
 
-  /* ------------------------------------------------------------ no close */
-
-  /** @override */
-  async _renderFrame(options) {
-    const frame = await super._renderFrame(options);
-    // The system's board has no close button: it is the game's home UI.
-    // The module's board is a guest window in someone's campaign and stays
-    // an ordinary, closable one — the toggle and the keybinding reopen it.
-    if (!IS_MODULE) frame.querySelector('button[data-action="close"]')?.remove();
-    return frame;
-  }
+  /* --------------------------------------------------------- header menu */
 
   /**
    * The module Director's Start/End lives in the window's ⋮ header menu —
@@ -109,28 +96,6 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     return controls;
-  }
-
-  /**
-   * The SYSTEM's board does not close. Escape, the (removed) X and any stray
-   * caller get `this` back unchanged. Two exceptions: `{force: true}`; and
-   * the detached-window manager, which calls `close()` on every app in a
-   * popped-out browser window the user has just closed. That one must
-   * succeed, or the board would linger in a dead document, so it closes and
-   * then comes straight back in the main window. The MODULE's board closes
-   * like any other window (guest manners), so it takes none of this.
-   * @override
-   */
-  async close(options = {}) {
-    if (IS_MODULE) return super.close(options);
-    if (options.closeKey) return this;
-    const detached = !!this.window.windowId;
-    if (!options.force && !detached) return this;
-    const result = await super.close(options);
-    if (detached && !options.force) {
-      setTimeout(() => openScoreboard().catch((err) => warn("could not bring the board back:", err)), 150);
-    }
-    return result;
   }
 
   /* ------------------------------------------------------------ position */
@@ -388,7 +353,7 @@ export const openScoreboard = async () => {
 /**
  * Is the mini game on? Module flavor only: the Director's world toggle that
  * opens the board on every client and closes it everywhere when it ends. The
- * system flavor has no such setting — its board is always on.
+ * system flavor has no such setting — there the game is always on.
  */
 export const miniGameActive = () => {
   if (!IS_MODULE) return true;

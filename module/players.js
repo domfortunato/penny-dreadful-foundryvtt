@@ -1,5 +1,5 @@
 import { IS_MODULE, NS, TYPE_PC, warn } from "./constants.js";
-import { ownerUserOf } from "./actor.js";
+import { ensureActorFolder, ownerUserOf } from "./actor.js";
 // A cycle (scoreboard → players → scoreboard), safe: both are only called at run time.
 import { miniGameActive } from "./scoreboard.js";
 
@@ -31,6 +31,9 @@ export const ensureCharacterFor = async (user, { force = false } = {}) => {
   if (creating.has(user.id)) return;
   creating.add(user.id);
   try {
+    // The Penny Dreadful folder first (it may not exist yet), so the new PC
+    // is filed by preCreateActor in the same write.
+    await ensureActorFolder();
     const actor = await foundry.documents.Actor.create({
       name: user.name,
       type: TYPE_PC,

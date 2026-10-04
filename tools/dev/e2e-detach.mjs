@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Pop-out check against a running world on FOUNDRY_URL: the board's header menu
- * offers Detach and no close button; detaching moves the board into a popped-out
+ * offers Detach beside the X; detaching moves the board into a popped-out
  * browser window with the system stylesheet; zooming in grows the popped-out
  * window with the board; a sheet and the rules journal opened from it appear in
  * the popped-out window, not behind it in the main one; closing that window from inside
- * (the way a real window close fires unload) brings the board back to the main
- * workspace. Playwright resolves as in e2e-smoke.mjs.
+ * (the way a real window close fires unload) closes the board, as its X does
+ * (the board closes in both flavors since 2026-10-03), and Alt+B brings it
+ * back in the main workspace. Playwright resolves as in e2e-smoke.mjs.
  *
  *   npm run dev:detach
  */
@@ -47,7 +48,7 @@ try {
   });
   console.log(JSON.stringify(controls));
   check(controls.toggleVisible && controls.entries.includes("detach"), "header menu offers Detach");
-  check(!controls.close, "still no close button");
+  check(controls.close, "the board has its X");
 
   // A sheet opened from the board in the main window stays there when the board pops out.
   await page.click("#pd-scoreboard button.pd-name-btn");
@@ -125,8 +126,11 @@ try {
   await page.waitForTimeout(3500);
   const state = await page.evaluate(() => { const app = foundry.applications.instances.get("pd-scoreboard"); return { ...globalThis.__pd, rendered: app?.rendered, windowId: app?.window?.windowId ?? null, detachedWindows: foundry.applications.detached.windows.size, inMainDom: !!document.getElementById("pd-scoreboard"), instance: !!app }; });
   console.log("after popup close:", JSON.stringify(state));
+  await page.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered && !document.getElementById("pd-scoreboard"), null, { timeout: 15000 })
+    .then(() => check(true, "closing the popped-out window closes the board")).catch(() => check(false, "the board outlived its popped-out window"));
+  await page.keyboard.press("Alt+KeyB");
   await page.waitForFunction(() => { const el = document.getElementById("pd-scoreboard"); const app = foundry.applications.instances.get("pd-scoreboard"); return !!el && app?.rendered && !app.window.windowId; }, null, { timeout: 15000 })
-    .then(() => check(true, "board came back to the main window after the popup closed")).catch(() => check(false, "board did not come back"));
+    .then(() => check(true, "Alt+B brings it back in the main window")).catch(() => check(false, "Alt+B did not bring the board back in the main window"));
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}/reattached.png` });
   check(errors.length === 0, `no page errors (${errors.length})`);

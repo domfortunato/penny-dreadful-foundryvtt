@@ -19,11 +19,13 @@ There are no character sheets. There is a scoreboard.
 
 - **The scoreboard**: a compact, semi-transparent window that opens for everyone.
   One row per character, ten penny slots, an eleventh column for the dead; the
-  rows sit under their own PCs and NPCs headers. Players can drag it or pop it
-  out into its own browser window; nobody can minimize or close it. A size
-  dropdown (100% to 200%, starting at 110%) resizes it for whoever picks. A
-  book icon opens the rules. In the sidebar's Actors tab every actor is
-  labelled (PC-PD) or (NPC-PD), so the two are told apart at a glance.
+  rows sit under their own PCs and NPCs headers. Players can drag it, pop it
+  out into its own browser window, or close it with its X; the coin in the
+  Token controls, or Alt+B, brings it back. A size dropdown (100% to 200%,
+  starting at 110%) resizes it for whoever picks. A book icon opens the
+  rules. In the sidebar's Actors tab every actor is labelled (PC-PD) or
+  (NPC-PD), so the two are told apart at a glance, and new PCs and NPCs are
+  filed in a *Penny Dreadful* folder.
 - **Who flips**: only the Director and the row's own player can flip a row's
   pennies; an NPC is the Director's alone. Everyone else sees "waiting".
 - **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge
@@ -81,12 +83,13 @@ header menu ⋮ — Alt+B opens the board — or Configure Settings): the
 scoreboard opens on every screen. The coin only ever starts the game or
 brings a closed board back; ending is the board's ⋮ menu, which asks first
 and closes the board everywhere. As a guest in your campaign the module behaves
-itself — the board is an ordinary closable window (Alt+B reopens it), PCs
+itself — the board opens only while the mini game runs, PCs
 are created for players only while the mini game is running, its "new
 one-shot" reset deletes only the mini game's own actors and chat messages,
 and your world's labels and players' own characters are never touched.
 Its PCs and NPCs appear in the Actors tab as their own clearly labelled
-types beside your system's.
+types beside your system's, in their own *Penny Dreadful* folder. The board
+itself works the same in the system and the module.
 
 Both the system and the module open a short **How To** at startup (with a
 "Show this next time" box), and the board's ? button brings it back.

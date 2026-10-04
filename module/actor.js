@@ -1,8 +1,49 @@
-import { TYPE_NPC, TYPE_PC, clampName, t } from "./constants.js";
+import { NS, TYPE_NPC, TYPE_PC, clampName, t, warn } from "./constants.js";
 
 const CLEARED = { ds: null, issuedBy: "", issuedAt: null };
 
 const isOurs = (actor) => actor?.type === TYPE_PC || actor?.type === TYPE_NPC;
+
+/**
+ * Our PCs and NPCs live in a "Penny Dreadful" folder in the Actors tab, not
+ * at its root (Dom, 2026-10-03; new actors only, nothing already in a world
+ * is moved). The folder is the one carrying our flag — so a rename keeps it
+ * — or else a top-level Actor folder already called "Penny Dreadful", which
+ * a Director may have made by hand. The flag is read straight off `flags`.
+ */
+export const actorFolder = () => {
+  const actorFolders = game.folders.filter((f) => f.type === "Actor");
+  return actorFolders.find((f) => f.flags?.[NS]?.actorFolder)
+    ?? actorFolders.find((f) => !f.folder && f.name === t("PD.ActorFolder"))
+    ?? null;
+};
+
+let folderPending = null;
+
+/**
+ * The folder, created if there is none and this user may create folders
+ * (core: ASSISTANT and up), else null. One creation in flight at a time on
+ * this client: the mini game's start creates a PC for every connected
+ * player at once, and each asks for the folder.
+ */
+export const ensureActorFolder = () => {
+  const found = actorFolder();
+  if (found) return Promise.resolve(found);
+  if (!foundry.documents.Folder.canUserCreate(game.user)) return Promise.resolve(null);
+  folderPending ??= foundry.documents.Folder.create({
+    name: t("PD.ActorFolder"),
+    type: "Actor",
+    flags: { [NS]: { actorFolder: true } },
+  })
+    .catch((err) => {
+      warn("could not create the actors folder:", err);
+      return null;
+    })
+    .finally(() => {
+      folderPending = null;
+    });
+  return folderPending;
+};
 
 /**
  * The player whose row this is: the first non-GM user with an explicit OWNER
@@ -41,17 +82,38 @@ export const registerActorHooks = () => {
   // auto-created PC named after its player, core's create dialog and the
   // sidebar rename. preCreate may change the source; a preUpdate hook's
   // changes are re-cleaned after it, so the trimmed name is what is written.
-  Hooks.on("preCreateActor", (actor) => {
+  //
+  // The same hook files a new actor of ours into the Penny Dreadful folder
+  // when it was given none (core's create dialog drops `folder` for the
+  // root, so "the root" and "not said" are one case) and the folder exists.
+  // A folder chosen at creation is kept, a compendium's actors are left
+  // alone, and later moves are updates, never touched.
+  Hooks.on("preCreateActor", (actor, data, options) => {
     if (!isOurs(actor)) return;
+    const update = {};
     const name = clampName(actor.name);
-    if (!name || name === actor.name) return;
-    // Core copied the full name into the prototype token before this hook
-    // ran (Actor#_initializeSource, and again in Actor#_preCreate), so a
-    // token dragged out later would wear the long name. Trim it too — but
-    // only when it IS the actor's name, never a token name chosen apart.
-    const update = { name };
-    if (actor.prototypeToken?.name === actor.name) update["prototypeToken.name"] = name;
-    actor.updateSource(update);
+    if (name && name !== actor.name) {
+      // Core copied the full name into the prototype token before this hook
+      // ran (Actor#_initializeSource, and again in Actor#_preCreate), so a
+      // token dragged out later would wear the long name. Trim it too — but
+      // only when it IS the actor's name, never a token name chosen apart.
+      update.name = name;
+      if (actor.prototypeToken?.name === actor.name) update["prototypeToken.name"] = name;
+    }
+    const folder = !actor.pack && !options.pack && !actor._source.folder ? actorFolder() : null;
+    if (folder) update.folder = folder.id;
+    if (Object.keys(update).length) actor.updateSource(update);
+  });
+  // The first actor of ours in a world with no folder yet (made in core's
+  // create dialog, say) is created at the root; its creator makes the
+  // folder, if they may, and moves it in. Our own creators ask for the
+  // folder first (ensureCharacterFor, the add dialog), so theirs is one write.
+  Hooks.on("createActor", (actor, options, userId) => {
+    if (userId !== game.user.id || !isOurs(actor) || actor.pack || actor._source.folder) return;
+    ensureActorFolder()
+      .then((folder) => (folder && game.actors.has(actor.id) && !actor._source.folder
+        ? actor.update({ folder: folder.id }) : null))
+      .catch((err) => warn(`could not file ${actor.name} in the actors folder:`, err));
   });
   Hooks.on("preUpdateActor", (actor, changes) => {
     if (!isOurs(actor) || typeof changes.name !== "string") return;

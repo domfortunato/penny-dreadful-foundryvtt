@@ -1,5 +1,5 @@
 import { MAX_DS, NAME_MAX, TEMPLATES, TYPE_NPC, TYPE_PC, t } from "./constants.js";
-import { ownerUserOf } from "./actor.js";
+import { ensureActorFolder, ownerUserOf } from "./actor.js";
 import { boardWindowOptions } from "./scoreboard.js";
 import { postFlipRequest, withdrawRequests } from "./request.js";
 import { getSpotlight, setSpotlight } from "./spotlight.js";
@@ -115,6 +115,8 @@ export const addToBoard = async (type) => {
   });
   if (!result || typeof result !== "object") return;
   if (result.name) {
+    // The folder first, so preCreateActor files the new row in one write.
+    await ensureActorFolder();
     await foundry.documents.Actor.create({ name: result.name, type, system: { onBoard: true } });
     return;
   }

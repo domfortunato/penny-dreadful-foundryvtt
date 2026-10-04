@@ -1,8 +1,10 @@
 ## The Board
 
-The Penny Dreadful board is the game's home. It stays open on every screen:
+The Penny Dreadful board is the game's home. It opens on every screen:
 drag it by its title bar, pop it out into its own window from its header
-menu (⋮), and make it bigger or smaller with the magnifier dropdown.
+menu (⋮), and make it bigger or smaller with the magnifier dropdown. Close
+it with its X; the coins in the Token controls on the left, or Alt+B, bring
+it back.
 
 Each row is a character: their name, their pennies, and a skull if they are
 dead. PCs come first, then NPCs. The gold star marks whose turn it is.
@@ -31,6 +33,7 @@ dead. PCs come first, then NPCs. The gold star marks whose turn it is.
 - **Who plays a PC:** open the PC (click its name) and choose the Player.
 - **A new one-shot:** the clapperboard. It deletes every PC, clears the
   chat, benches the NPCs, and makes a fresh PC for each connected player.
+- In the Actors tab, new PCs and NPCs go into the Penny Dreadful folder.
 - **Settings:** the NPC Penny Limit (5 to 10) and automatic PCs are in
   Configure Settings → Penny Dreadful.
 
@@ -39,5 +42,3 @@ dead. PCs come first, then NPCs. The gold star marks whose turn it is.
 - Book: the rules.
 - Percent: the odds of every flip.
 - Question mark: this guide.
-
-Alt+B brings the board back if it is ever lost.

@@ -22,7 +22,9 @@
  * only) and ending asks first; the coin starts a stopped game for the
  * Director and otherwise brings the board back — it never ends one; no character is
  * auto-created while the game is off, and starting it gives the connected
- * player one; the How To opens for the Director at startup and for a player
+ * player one; our new actors are filed in a "Penny Dreadful" folder, made
+ * when the first one needs it, and a host actor never is (the run starts
+ * with no folder); the How To opens for the Director at startup and for a player
  * only once the game opens their board; a PC added from the board carries
  * the namespaced type, takes a DS and flips from the chat card; the one-shot
  * reset deletes only the mini game's own actors and messages — the host's
@@ -103,7 +105,15 @@ function watchErrors(page, label) {
     /is not a valid type for the Actor Document class/,
   ];
   const ignored = (t) => ignore.some((re) => re.test(t));
-  page.on("console", (m) => { if (m.type() === "error" && !ignored(m.text())) errors.push(`[${label}] ${m.text()}`); });
+  // Said where it happens, with the stack when an Error was logged: the
+  // summary at the end cannot tell which step caused it.
+  page.on("console", async (m) => {
+    if (m.type() !== "error" || ignored(m.text())) return;
+    errors.push(`[${label}] ${m.text()}`);
+    let stack = "";
+    for (const a of m.args()) stack += await a.evaluate((v) => (v instanceof Error ? v.stack : "")).catch(() => "");
+    console.log(`  error [${label}] ${m.text()}${stack ? `\n${stack.split("\n").slice(0, 8).join("\n")}` : ""}`);
+  });
   page.on("pageerror", (e) => { const t = `[${label}] pageerror: ${e.message}`; if (!ignored(t)) errors.push(t); });
   return errors;
 }
@@ -239,7 +249,20 @@ try {
     if (actors.length) await foundry.documents.Actor.deleteDocuments(actors);
     const msgs = game.messages.filter((m) => !!m.flags?.[id] || /host campaign was here/.test(m.content)).map((m) => m.id);
     if (msgs.length) await foundry.documents.ChatMessage.deleteDocuments(msgs);
+    // No actors folder either, so every run proves it is made when needed.
+    const folders = game.folders.filter((f) => f.type === "Actor" && (f.flags?.[id]?.actorFolder || (!f.folder && f.name === "Penny Dreadful")));
+    if (folders.length) await foundry.documents.Folder.deleteDocuments(folders.map((f) => f.id));
+    // An active scene, so the canvas is ready and the coin is live (scene
+    // controls do nothing without one). The world's scenes once vanished
+    // between runs, and every coin step went dead with them.
+    if (!game.scenes.active) {
+      const scene = game.scenes.getName("Smoke Host Scene")
+        ?? await foundry.documents.Scene.create({ name: "Smoke Host Scene" });
+      await scene.activate();
+    }
   }, MODULE_ID);
+  await gm.waitForFunction(() => canvas.ready, null, { timeout: 30000 })
+    .catch(() => note("the canvas did not come up; the coin steps will be skipped"));
   await gm.waitForTimeout(1000);
 
   /* ---------------------------------------- stage 2: a guest, unpacked */
@@ -277,6 +300,30 @@ try {
     return { hostType, actorId: actor.id, msgId: msg.id };
   }, MODULE_ID);
   ok(`host keepsakes created (a "${hostBaseline.hostType}" actor and a chat message)`);
+
+  // Dom (2026-10-03): our new PCs and NPCs go in a "Penny Dreadful" folder,
+  // never the root. With no folder yet, the actor's creator makes it and
+  // moves the actor in; a host actor is never filed.
+  const filing = await gm.evaluate(async ({ id, hostActorId }) => {
+    const before = game.folders.filter((f) => f.type === "Actor" && f.flags?.[id]?.actorFolder).length;
+    const npc = await foundry.documents.Actor.create({ name: "Smoke Filed", type: `${id}.npc` });
+    const deadline = Date.now() + 8000;
+    while (!npc.folder && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+    const folder = npc.folder;
+    const result = {
+      before,
+      name: folder?.name ?? null,
+      flagged: !!folder?.flags?.[id]?.actorFolder,
+      topLevel: !!folder && !folder.folder,
+      folders: game.folders.filter((f) => f.type === "Actor" && f.flags?.[id]?.actorFolder).length,
+      hostFolder: game.actors.get(hostActorId)?.folder?.id ?? null,
+    };
+    await npc.delete();
+    return result;
+  }, { id: MODULE_ID, hostActorId: hostBaseline.actorId });
+  check(filing.before === 0 && filing.name === "Penny Dreadful" && filing.flagged && filing.topLevel && filing.folders === 1,
+    `with no folder yet, our first NPC made one "Penny Dreadful" folder and moved in (${JSON.stringify(filing)})`);
+  check(filing.hostFolder === null, "the host's actor stays at the root");
 
   // Dom's rule — a character's name is at most 25 characters — holds for
   // OUR types, and a guest never trims a host actor's name.
@@ -373,6 +420,11 @@ try {
     return game.actors.some((a) => a.type === `${id}.character` && a.ownership[bob.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
   }, MODULE_ID, { timeout: 15000 })
     .then(() => ok("starting the game gave the connected player Bob a PC")).catch(() => fail("starting the game gave the connected player Bob a PC"));
+  check(await gm.evaluate((id) => {
+    const bob = game.users.getName("Bob");
+    const pc = game.actors.find((a) => a.type === `${id}.character` && a.ownership[bob.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+    return !!pc?.folder?.flags?.[id]?.actorFolder;
+  }, MODULE_ID), "…in the Penny Dreadful folder");
   const toolOn = await gm.evaluate(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard?.title ?? null);
   if (toolOn !== null) check(toolOn === "PD.Controls.ScoreboardModule", `with the game on, the coin offers the board, not an end (${toolOn})`);
   const bobEntries = await bob.evaluate(() => (foundry.applications.instances.get("pd-scoreboard")?._getHeaderControls() ?? []).map((c) => c.label));
@@ -417,7 +469,15 @@ try {
     .then(() => ok("End: the board closed for Bob")).catch(() => fail("End: the board closed for Bob"));
   // Restart with the coin where there is one: with the game off, the
   // Director's coin STARTS it — one click, no confirm.
-  if (await gm.evaluate(() => !!document.querySelector('#scene-controls button.tool[data-tool="pdScoreboard"]'))) {
+  // The coin only works with a ready canvas (scene-controls.mjs:593).
+  const coinLive = () => gm.evaluate(() => canvas.ready && !!document.querySelector('#scene-controls button.tool[data-tool="pdScoreboard"]'));
+  if (await coinLive()) {
+    // Ending re-renders the controls (onMiniGameToggled's reset render); a
+    // click while that render swaps the button lands on the old one. Wait
+    // for the coin to say "Start" first, as a person would see it.
+    await gm.waitForFunction(() => ui.controls?.controls?.tokens?.tools?.pdScoreboard?.title === "PD.Controls.MiniGame"
+      && !!document.querySelector('#scene-controls button.tool[data-tool="pdScoreboard"]'), null, { timeout: 10000 }).catch(() => {});
+    await gm.waitForTimeout(500);
     await gm.click('#scene-controls button.tool[data-tool="pdScoreboard"]');
     await gm.waitForFunction((id) => game.settings.get(id, "miniGameActive") === true, MODULE_ID, { timeout: 10000 })
       .then(() => ok("with the game off, the Director's coin starts it, no confirm")).catch(() => fail("with the game off, the Director's coin starts it, no confirm"));
@@ -432,7 +492,7 @@ try {
   // get it back, asked to END the game — and Cancel left the board shut.
   // The coin never ends the game: it brings the board back.
   const coin = '#scene-controls button.tool[data-tool="pdScoreboard"]';
-  if (await gm.evaluate((sel) => !!document.querySelector(sel), coin)) {
+  if (await coinLive()) {
     await gm.click('#pd-scoreboard .header-control[data-action="close"]');
     await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 5000 })
       .then(() => ok("the Director's X closes their own board")).catch(() => fail("the Director's X closes their own board"));
@@ -461,6 +521,8 @@ try {
   }, MODULE_ID, { timeout: 10000 })
     .then(() => ok("a PC added from the board carries the namespaced type and a row"))
     .catch(() => fail("a PC added from the board carries the namespaced type and a row"));
+  check(await gm.evaluate((id) => !!game.actors.getName("Module Smoke PC")?.folder?.flags?.[id]?.actorFolder, MODULE_ID),
+    "…and lands in the Penny Dreadful folder");
 
   const pcId = await gm.evaluate(() => game.actors.getName("Module Smoke PC")?.id ?? null);
 
@@ -563,6 +625,7 @@ try {
       freshPcs: game.actors.filter((a) => a.type === `${id}.character`).length,
       bobsFresh: game.actors.some((a) => a.type === `${id}.character`
         && a.ownership[game.users.getName("Bob")?.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER),
+      freshFiled: game.actors.filter((a) => a.type === `${id}.character`).every((a) => !!a.folder?.flags?.[id]?.actorFolder),
       total: game.messages.size,
     };
   }, [MODULE_ID, hostBaseline.msgId]);
@@ -570,6 +633,7 @@ try {
   check(after.pdMsgs === 0, "every mini-game message is gone");
   check(after.spotlight === "", "the spotlight went out");
   check(after.freshPcs === 1 && after.bobsFresh, `the connected player got one fresh PC (${after.freshPcs} PCs, Bob's: ${after.bobsFresh})`);
+  check(after.freshFiled, "…filed in the Penny Dreadful folder");
   note(`chat went from ${before} to ${after.total} messages`);
 
   /* ----------------------------------------- stage 7: the rules journal */

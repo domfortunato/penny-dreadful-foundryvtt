@@ -75,13 +75,6 @@
     font-size: calc(12 * var(--pd-u));
 }
 
-/* The SYSTEM's board never closes: the close control is removed in
-   _renderFrame, and this is the belt to that brace. Scoped to pd-board-fixed,
-   because the module's board is an ordinary closable window and keeps its X. */
-.pd-scoreboard.pd-board-fixed .window-header .header-control[data-action="close"] {
-    display: none;
-}
-
 .pd-scoreboard .window-content {
     background: transparent;
     color: var(--pd-fg);

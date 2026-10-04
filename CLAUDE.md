@@ -41,12 +41,12 @@ Dreadful. One mechanic: flip your pennies. Read `README.md` for what it does and
   version, documentTypes, ids and entries; a module pack must NOT declare
   `system` or its journals lock to a host it never requires) and
   `npm run release` bumps both versions under one tag. GUEST MANNERS
-  (Phase C, module flavor only, all behind `IS_MODULE`): the board is an
-  ordinary closable window (the close button stays, `close()` does not
-  refuse) that follows the Director's world toggle `miniGameActive` — the
-  scene-control coin button IS the toggle for a Director who can write
-  world settings (players' button just reopens their own board, Alt+B
-  too), ready opens the board only when the toggle is on, and
+  (Phase C, module flavor only, all behind `IS_MODULE`): the board
+  follows the Director's world toggle `miniGameActive` — the
+  scene-control coin STARTS a stopped game for a Director who can write
+  world settings and otherwise reopens your own board (Alt+B too; it
+  never ends the game, see the seventh review below), ready opens the
+  board only when the toggle is on, and
   `onMiniGameToggled` opens/force-closes on every client; auto-create
   is on but acts ONLY WHILE THE MINI GAME RUNS (Dom, 2026-10-03: a guest
   never seeds actors because someone connected — starting the game is the
@@ -126,8 +126,16 @@ junction to this folder; the local 14.365 app runs on :30000.
 
 ## Things learned the hard way (keep adding)
 
-- ApplicationV2's close button is hard-coded in `_renderFrame`; the scoreboard
-  removes it there, no-ops `close()` unless `{force: true}`, and hides it in CSS.
+- THE BOARD IS THE SAME IN BOTH FLAVORS (Dom, 2026-10-03): a change to the
+  board's behavior lands in the system and the module alike. The only
+  differences are the ones the mini game itself makes (Start/End, the
+  toggle opening and force-closing every board, the coin's start). So both
+  boards close like any window: the X, Escape (core's dismiss closes every
+  framed app, client-keybindings.mjs:755), or closing a popped-out browser
+  window; the coin and Alt+B bring them back. Until 0.3.1 the system's board
+  could not close (the X removed in `_renderFrame`, `close()` refusing,
+  `pd-board-fixed` hiding it in CSS, a popped-out board reopening in the
+  main window); none of that is left.
 - THE HARD RULE ON DICE SO NICE: never required, never configured, never
   assumed. The manifest does not name it. `module/dice-hold.js` is the only
   file that mentions it, and everything there checks for it first: with it
@@ -285,6 +293,23 @@ junction to this folder; the local 14.365 app runs on :30000.
   next saved (the sheet submits the whole form, name included). The inputs'
   `maxlength` counts UTF-16 units, so emoji stop typing early; clampName,
   counting characters, is the rule.
+- OUR NEW ACTORS GO IN A "Penny Dreadful" FOLDER in the Actors tab (Dom,
+  2026-10-03, both flavors; new actors only, nothing already in a world
+  moves). `actorFolder`/`ensureActorFolder` in actor.js: the Actor folder
+  flagged `flags[NS].actorFolder` (a rename keeps it), else a top-level
+  Actor folder already named "Penny Dreadful", adopted as it is.
+  `preCreateActor` files a new actor of ours that came with no folder,
+  when the folder exists (core's create dialog deletes `folder` for the
+  root, so root and unspecified are one case); with none yet, a
+  `createActor` hook on the creating client makes it (Folder create needs
+  ASSISTANT) and moves the actor in. Our creators (`ensureCharacterFor`,
+  the add dialog) call `ensureActorFolder()` first so theirs is one write,
+  and the in-flight creation is memoized: the mini game's start makes a PC
+  for every connected player at once and must make ONE folder. A folder
+  chosen at creation is kept, compendium actors are skipped, later moves
+  are never touched. Guest manners: the module makes the folder only when
+  it makes one of its own actors, never at ready, and never files a host
+  actor.
 - SEVENTH REVIEW (2026-09-28, the module work) — guest manners it added:
   - SCENE-CONTROL TOOLS ARE DEAD WITHOUT A READY CANVAS (client
     scene-controls.mjs:593 `if (!canvas.ready) return` before any tool
@@ -331,8 +356,8 @@ junction to this folder; the local 14.365 app runs on :30000.
     live in `lang/en-system.json`, which only system.json loads;
     manifest-check fails if the module ever declares a `*-system.json`,
     and ESLint's identical-keys rule is off for those files only.
-  - The system board's hidden close control is scoped to its own class,
-    `pd-board-fixed`; the module's board shows its X.
+  - The module's board showed its X (a CSS rule had hidden it too); since
+    2026-10-03 both flavors' boards do.
   - The module never writes `user.character` (core would speak a host
     player's ordinary chat as the mini-game PC); the system still keeps
     the pointer in step.
