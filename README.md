@@ -6,14 +6,15 @@ flip your pennies.
 
 The Game Master is **The Director**. Every player starts with one penny. When the
 Director asks for a check or a save they name a Difficulty Score (1 to 5); the
-player flips every penny they hold, heads count 1, and meeting the DS is a
-success. A failure adds a penny. A failure with ten pennies is the end of that
-character. NPCs play by the same rule with a smaller hand: five pennies at
+player flips all of their pennies at once by pressing a single button. Each
+head counts 1, and meeting the DS is a success. A failure adds a penny. A
+failure with ten pennies is the end of the rope for that character. NPCs play by the same rule with a smaller hand: five pennies at
 most by default, and a failure with a full hand is the end of them. The
 Director can set the NPC hand anywhere from five to ten in the game settings
 (NPC Penny Limit); it applies to every NPC.
 
-There are no character sheets. There is a scoreboard.
+There are no character sheets. Instead, there is a scoreboard for tracking
+every PC's and NPC's pennies and flips:
 
 ![The Director's view: the board with a PC in the spotlight asked to flip against DS 3 and an NPC below, and in the chat an ask, a successful flip and a pending Flip button](docs/director-pov.png)
 
@@ -28,25 +29,22 @@ There are no character sheets. There is a scoreboard.
   rules. In the sidebar's Actors tab every actor is labelled (PC-PD) or
   (NPC-PD), so the two are told apart at a glance, and new PCs and NPCs are
   filed in a *Penny Dreadful* folder.
-- **Who flips**: only the Director and the row's own player can flip a row's
-  pennies; an NPC is the Director's alone. Everyone else sees "waiting".
+- **Who flips**: only the Director and the PC's own player can flip a PC's
+  pennies; only the Director flips for NPCs.
 - **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge
   (a DS higher than the pennies the row holds cannot be met, so its button is
-  greyed out); minus and plus adjust pennies; a star marks whose turn it is
-  and a Next arrow advances it; PCs and NPCs can be taken off the board (a
+  greyed out); minus and plus adjust pennies by hand; a star marks whose
+  turn it is and a Next arrow advances it; PCs and NPCs can be taken off the board (a
   confirm asks first, and nothing is deleted — the actor stays in the Actors
-  tab) and added back or created by name from the toolbar. Each character's
-  sheet has a Player dropdown that gives the row to a player — one player
-  can own several characters. NPCs sit in their own section under the
-  characters with a slot for each penny they can hold.
+  tab) and added back or created by name from the toolbar.
 - **New one-shot**: a clapperboard on the board resets the world for the next
   session — one confirm, then every PC is deleted, the chat log is cleared,
   NPCs leave the board but are kept, and a fresh character is created for
   each connected player.
 - **The flip**: the Director's request lands in chat as a card with a Flip
-  button; the player flips from the card or from the board, and the pennies are
-  rolled as Foundry coins. The result lands in chat as a card of copper cents
-  and the board updates itself. No module is needed or configured.
+  button; the player flips from the card or from the board, and Foundry rolls
+  the pennies as coins. The result lands in chat as a card of copper cents,
+  and the board updates itself. No other module is needed.
 - **If Dice So Nice happens to be active** (it is never required): the coins
   fly as that module's coins, the board waits for them to land, and the
   Director gets a thumbtack that holds each flip's coins on every screen
@@ -54,12 +52,10 @@ There are no character sheets. There is a scoreboard.
 - **The odds**: every DS button shows the chance of success for that row's
   pennies, and a percent button opens a table for every hand of 1 to 10
   pennies against every DS from 1 to 5.
-- **The Director**: the Gamemaster role is labelled "The Director" and the
-  default Gamemaster account is renamed once.
-- **Rows make themselves**: a character actor is created for each player the
+- **New PCs are created automatically**: a PC is created for each player the
   first time they connect (a world setting turns this off).
 - **The rules**: shipped as a journal in the *Penny Dreadful* compendium folder,
-  beside the odds table.
+  beside the odds table and the How To.
 
 ## Installing
 
@@ -80,15 +76,15 @@ https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest
 ```
 
 Enable it in the world, and the GM starts the mini game with the coin
-button in the token toolbar (or, with no scene active, from the board's
+button in the Token controls (or, with no scene active, from the board's
 header menu ⋮ — Alt+B opens the board — or Configure Settings): the
 scoreboard opens on every screen. The coin only ever starts the game or
 brings a closed board back; ending is the board's ⋮ menu, which asks first
-and closes the board everywhere. As a guest in your campaign the module behaves
-itself — the board opens only while the mini game runs, PCs
-are created for players only while the mini game is running, its "new
-one-shot" reset deletes only the mini game's own actors and chat messages,
-and your world's labels and players' own characters are never touched.
+and closes the board everywhere. As a guest in your campaign the module
+behaves itself: the board opens, and PCs are created for players, only while
+the mini game runs; its "new one-shot" reset deletes only the mini game's
+own actors and chat messages; and your world's labels and players' own
+characters are never touched.
 Its PCs and NPCs appear in the Actors tab as their own clearly labelled
 types beside your system's, in their own *Penny Dreadful* folder. The board
 itself works the same in the system and the module.
@@ -102,7 +98,7 @@ Plain ES modules, no bundler. The compendium is built from YAML:
 
 ```
 npm install
-npm run import:rules     # docs/player-facing-rules.md and the odds table -> src/packs/rules/*.yml
+npm run import:rules     # the rules, the odds table and the How To (docs/*.md) -> src/packs/rules/*.yml
 npm run build:packs      # src/packs/ -> packs/   (stop Foundry first)
 npm run check            # syntax, manifest, i18n and lint gates
 ```
@@ -120,7 +116,8 @@ This distribution is not under a single licence; see [LICENSE.txt](LICENSE.txt).
   shipped here is an adaptation for Foundry VTT under the same licence.
   Daniel Fitzpatrick wrote the game; he is not involved in this Foundry system
   and does not endorse it.
-- **Code** (`module/`, `templates/`, `css/`, `lang/`, `tools/`, `system.json`):
+- **Code** (`module/`, `templates/`, `css/`, `lang/`, `tools/`, `system.json`,
+  `module.json`):
   MIT, (c) 2026 Dom Bosco.
 - Icons are [Font Awesome](https://fontawesome.com/) as bundled with Foundry VTT.
 - The code was written with the help of Claude Code. No game text was generated
