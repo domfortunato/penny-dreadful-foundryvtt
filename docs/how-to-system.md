@@ -56,7 +56,7 @@ to know:
   **Flip** button, and the same button appears on your row. Click it once.
 - Heads count toward the Difficulty Level (DL). Meet or beat it and you
   succeed. Fail and you gain a penny. Failing while holding ten pennies is
-  the end of your character. [The rules](pd:rules) have the rest, and
+  the end of your rope. [The rules](pd:rules) have the rest, and
   [the odds table](pd:odds) shows your chances.
 - You can close your scoreboard with its X; Alt+B or the coins in the Token
   controls bring it back.
