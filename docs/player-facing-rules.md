@@ -9,10 +9,10 @@ This is a Horror Movie. The game master is called "The Director."
 
 🪙 There is only one player's mechanic in this system!
 - Each player starts with one penny. 
--  When the director (your Game Master) ask you make a save or check, they will give you a Difficulty Score (DS) than you need to meet or beat to succeed. Then they will ask you to flip your pennies (by clicking a button in Foundry VTT in our case).
+-  When the director (your Game Master) ask you make a save or check, they will give you a Difficulty Level (DL) than you need to meet or beat to succeed. Then they will ask you to flip your pennies (by clicking a button in Foundry VTT in our case).
 - Heads count 1 and Tails count 0 toward your success. 
-- The difficulty score is variable, but the DS maximum is 5. 
-- If the number of heads meets or beats the DS, you succeed.
+- The difficulty level is variable, but the DL maximum is 5. 
+- If the number of heads meets or beats the DL, you succeed.
 - If you fail the check or save, you will be given an additional penny that you must flip on your next check or save. 
 - You may accrue up to 10 pennies.
 

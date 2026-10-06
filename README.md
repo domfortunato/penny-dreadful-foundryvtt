@@ -7,9 +7,9 @@ scoreboard to run Penny Dreadful inside an existing Foundry world, with any
 system.
 
 The Game Master is **The Director**. Every player starts with one penny. When the
-Director asks for a check or a save they name a Difficulty Score (1 to 5); the
+Director asks for a check or a save they name a Difficulty Level (1 to 5); the
 player flips all of their pennies at once by pressing a single button. Each
-head counts 1, and meeting the DS is a success. A failure adds a penny. A
+head counts 1, and meeting the DL is a success. A failure adds a penny. A
 failure with ten pennies is the end of the rope for that character. NPCs play by the same rule with a smaller hand: five pennies at
 most by default, and a failure with a full hand is the end of them. The
 Director can set the NPC hand anywhere from five to ten in the game settings
@@ -18,7 +18,7 @@ Director can set the NPC hand anywhere from five to ten in the game settings
 There are no character sheets. Instead, there is a scoreboard for tracking
 every PC's and NPC's pennies and flips:
 
-![The Director's view: the board with a PC in the spotlight asked to flip against DS 3 and an NPC below, and in the chat an ask, a successful flip and a pending Flip button](docs/director-pov.png)
+![The Director's view: the board with a PC in the spotlight asked to flip against DL 3 and an NPC below, and in the chat an ask, a successful flip and a pending Flip button](docs/director-pov.png)
 
 ## What the module does
 
@@ -33,8 +33,8 @@ every PC's and NPC's pennies and flips:
   filed in a *Penny Dreadful* folder.
 - **Who flips**: only the Director and the PC's own player can flip a PC's
   pennies; only the Director flips for NPCs.
-- **The Director's controls**: DS buttons 1 to 5 on each row issue a challenge
-  (a DS higher than the pennies the row holds cannot be met, so its button is
+- **The Director's controls**: DL buttons 1 to 5 on each row issue a challenge
+  (a DL higher than the pennies the row holds cannot be met, so its button is
   greyed out); minus and plus adjust pennies by hand; a star marks whose
   turn it is and a Next arrow advances it; PCs and NPCs can be taken off the board (a
   confirm asks first, and nothing is deleted — the actor stays in the Actors
@@ -51,9 +51,9 @@ every PC's and NPC's pennies and flips:
   fly as that module's coins, the board waits for them to land, and the
   Director gets a thumbtack that holds each flip's coins on every screen
   until a broom button clears them.
-- **The odds**: every DS button shows the chance of success for that row's
+- **The odds**: every DL button shows the chance of success for that row's
   pennies, and a percent button opens a table for every hand of 1 to 10
-  pennies against every DS from 1 to 5.
+  pennies against every DL from 1 to 5.
 - **New PCs are created automatically**: a PC is created for each player the
   first time they connect (a world setting turns this off).
 - **The rules**: shipped as a journal in the *Penny Dreadful* compendium folder,

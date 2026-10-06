@@ -28,9 +28,9 @@ Director needs to know:
   it back. The coins never end the game.
 - **End the game:** the scoreboard's header menu (⋮) → **End the Penny Dreadful mini-game and close the scoreboard on every canvas**. It asks first. Nothing is deleted: start again and the scoreboard
   is as you left it.
-- **Ask a player for a flip:** click a DS number (1 to 5) on their row. The
+- **Ask a player for a flip:** click a DL number (1 to 5) on their row. The
   ask goes to chat as a card with a Flip button, and the row is spotlit.
-  Click the same number again to withdraw it. A DS higher than the pennies
+  Click the same number again to withdraw it. A DL higher than the pennies
   the row holds can't be asked, because it couldn't be met.
 - **Add or remove pennies by hand:** − and + on a row. Minus on a dead row
   brings the character back to life first.
@@ -50,7 +50,7 @@ Director needs to know:
   Penny Dreadful PC and the mini-game's own chat messages, benches the NPCs,
   and makes a fresh PC for each connected player. It asks first.
 - **What are the chances?** The % icon opens [a table of the odds](pd:odds)
-  of success for every DS against the pennies in a player's hand.
+  of success for every DL against the pennies in a player's hand.
 
 ## For Players
 
@@ -59,7 +59,7 @@ Director needs to know:
   name.
 - When the Director asks you to flip, a card appears in the chat with a
   **Flip** button, and the same button appears on your row. Click it once.
-- Heads count toward the Difficulty Score (DS). Meet or beat it and you
+- Heads count toward the Difficulty Level (DL). Meet or beat it and you
   succeed. Fail and you gain a penny. Failing while holding ten pennies is
   the end of your character. [The rules](pd:rules) have the rest, and
   [the odds table](pd:odds) shows your chances.

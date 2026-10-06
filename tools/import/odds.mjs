@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * The odds journal: for every hand of pennies (1 to 10) and every DS (1 to
- * 5), the chance that the flip shows at least DS heads. A chance that is
- * exactly nothing (a DS above the pennies held) prints as a dash. `module/odds.js` does the
+ * The odds journal: for every hand of pennies (1 to 10) and every DL (1 to
+ * 5), the chance that the flip shows at least DL heads. A chance that is
+ * exactly nothing (a DL above the pennies held) prints as a dash. `module/odds.js` does the
  * arithmetic, the same code the board's tooltips use, and the table lands in
  * `src/packs/rules/` beside the rules. This is reference material computed
  * from the rules, not game text.
@@ -25,11 +25,11 @@ const ENTRY_NAME = "Odds of Success";
 
 const range = (n) => Array.from({ length: n }, (_, i) => i + 1);
 const cell = (p) => (p === 0 ? "—" : percent(p));
-const head = `<tr><th>Pennies</th>${range(MAX_DS).map((ds) => `<th>DS ${ds}</th>`).join("")}</tr>`;
+const head = `<tr><th>Pennies</th>${range(MAX_DS).map((ds) => `<th>DL ${ds}</th>`).join("")}</tr>`;
 const rows = range(MAX_PENNIES).map((n) =>
   `<tr><td>${n}</td>${range(MAX_DS).map((ds) => `<td>${cell(chanceOfSuccess(n, ds))}</td>`).join("")}</tr>`).join("");
 const html = collapse(`
-<p>The odds that a flip's head count will meet or beat the Difficulty Score</p>
+<p>The odds that a flip's head count will meet or beat the Difficulty Level</p>
 <table><thead>${head}</thead><tbody>${rows}</tbody></table>
 `);
 

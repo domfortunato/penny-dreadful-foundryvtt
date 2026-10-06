@@ -42,9 +42,9 @@ export class PennyActorModel extends foundry.abstract.TypeDataModel {
   }
 
   /**
-   * For a few hours the Director could set the maximum DS as high as 10. A
+   * For a few hours the Director could set the maximum DL as high as 10. A
    * challenge left pending above 5 from then is dropped on load, rather than
-   * clamped to 5 and left pending at a DS nobody asked for, now that the DS
+   * clamped to 5 and left pending at a DL nobody asked for, now that the DL
    * is fixed at 5 again. Only a full record is migrated: core also runs
    * migrations on the changes of an update (`partial`), and an update must
    * not be turned into a clear of the whole challenge; the field clamps the

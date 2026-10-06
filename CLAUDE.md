@@ -84,7 +84,7 @@ with a one-line rule here.
 - A popped-out board sizes its window (`_refit`); windows it opens go through
   `renderFromBoard` / `boardWindowOptions`.
 - World-setting writes are gated on `canSetWorld` (`SETTINGS_MODIFY`), not `isGM`.
-- The DS is fixed at 1–5. A DS above the row's current pennies can't be asked,
+- The DL is fixed at 1–5. A DL above the row's current pennies can't be asked,
   except clicking the pending one to withdraw it.
 - A NumberField clamps; it does not reject. Writers clamp anyway.
 - Never give `<body>` a class the stylesheet uses (`pd-client-player`).

@@ -39,7 +39,7 @@ export const MAX_PENNIES = 10;
  */
 export const NPC_MAX_PENNIES_MIN = 5;
 export const NPC_MAX_PENNIES_DEFAULT = 5;
-/** The Difficulty Score runs from 1 to 5, as the rules say. Fixed; not a setting. */
+/** The Difficulty Level runs from 1 to 5, as the rules say. Fixed; not a setting. */
 export const MAX_DS = 5;
 /**
  * A character's name, PC or NPC, is at most 25 characters (Dom's rule for

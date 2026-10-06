@@ -9,7 +9,7 @@ so you can write each one in your own words.
 
 - Type your wording after `Your text:` on the same line.
 - Keep every `{placeholder}` exactly as shown. The code swaps in the real
-  value, such as a character's name or a DS number.
+  value, such as a character's name or a DL number.
 - Some strings come in pairs, one for exactly 1 and one for any other number
   ("1 penny" against "3 pennies"). Write both.
 - **Module only** and **System only** mark text that only one flavor shows.
@@ -61,7 +61,7 @@ Your text: Read Penny Dreadful's rules
 
 #### `PD.Board.Odds`
 Where: the % icon. Everyone.
-Does: opens the table of odds for every hand against every DS.
+Does: opens the table of odds for every hand against every DL.
 Your text: Odds of success
 
 #### `PD.Board.HowTo`
@@ -152,28 +152,28 @@ Does: says the character is dead.
 Your text: It's the end
 
 #### `PD.Board.Challenge`
-Where: hover text on a DS number button (1 to 5) on a row. Director only.
-Does: clicking asks that row to flip against this DS; it also shows the chance of success.
+Where: hover text on a DL number button (1 to 5) on a row. Director only.
+Does: clicking asks that row to flip against this DL; it also shows the chance of success.
 Must keep: `{ds}` (1 to 5) and `{chance}` (a percentage, like 62.3%)
-Your text: Ask to flip against DS {ds} with {chance} chance of success
+Your text: Ask to flip against DL {ds} with {chance} chance of success
 
 #### `PD.Board.ChallengeImpossible`
-Where: hover text on a greyed-out DS button. Director only.
-Does: explains the DS can't be asked, because it is higher than the pennies the row holds.
+Where: hover text on a greyed-out DL button. Director only.
+Does: explains the DL can't be asked, because it is higher than the pennies the row holds.
 Must keep: `{ds}`
-Your text: DS {ds} not allowed until character has more pennies
+Your text: DL {ds} not allowed until character has more pennies
 
 #### `PD.Board.ClearChallenge`
-Where: hover text on the DS button that is currently asked. Director only.
+Where: hover text on the DL button that is currently asked. Director only.
 Does: clicking it again withdraws the ask.
 Must keep: `{ds}`
-Your text: Clear DS {ds}
+Your text: Clear DL {ds}
 
 #### `PD.Board.Flip`
 Where: the Flip button, on the row and on the chat card. The row's player and the Director.
-Does: flips all the row's pennies against the asked DS.
+Does: flips all the row's pennies against the asked DL.
 Must keep: `{ds}`
-Your text: Flip against DS {ds}
+Your text: Flip against DL {ds}
 
 #### `PD.Board.Flipping`
 Where: replaces the Flip button while the coins are in the air.
@@ -182,9 +182,9 @@ Your text: Flip in progress
 
 #### `PD.Board.Pending`
 Where: a short label on a row with an ask waiting, seen by those who can't flip it.
-Does: shows which DS was asked.
+Does: shows which DL was asked.
 Must keep: `{ds}`
-Your text: Pending flip against DS {ds}
+Your text: Pending flip against DL {ds}
 
 #### `PD.Board.PendingHint`
 Where: hover text on that label.
@@ -225,10 +225,10 @@ Your text: Spotlighted
 ## 5. The Chat Card That Asks for a Flip
 
 #### `PD.Chat.RequestTitle`
-Where: the card's heading, posted when the Director clicks a DS.
-Does: says the Director asks `{name}` to flip against DS `{ds}`.
+Where: the card's heading, posted when the Director clicks a DL.
+Does: says the Director asks `{name}` to flip against DL `{ds}`.
 Must keep: `{name}` (the character) and `{ds}`
-Your text: The Director asks {name} to flip against DS {ds}
+Your text: The Director asks {name} to flip against DL {ds}
 
 #### `PD.Chat.RequestWaiting`
 Where: on the card, for everyone except the player who flips (and the Director).
@@ -248,7 +248,7 @@ Must keep: `{name}` (the character)
 Your text: {name} has flipped
 
 #### `PD.Chat.RequestWithdrawn`
-Where: on the card when the Director clicked the DS again to cancel.
+Where: on the card when the Director clicked the DL again to cancel.
 Does: says the Director withdrew the ask.
 Your text: The Director withdrew the ask
 
@@ -261,14 +261,14 @@ Your text: No pending flip
 
 #### `PD.Chat.FlavorOne` and `PD.Chat.Flavor`
 Where: the result card's heading.
-Does: says `{name}` flips `{n}` penny/pennies against DS `{ds}`. Write the 1-penny version, then the version for any other number.
+Does: says `{name}` flips `{n}` penny/pennies against DL `{ds}`. Write the 1-penny version, then the version for any other number.
 Must keep: `{name}`, `{n}`, `{ds}`
-Your text (1 penny): {name} flips against DS {ds} ({n} penny)
-Your text (other numbers): {name} flips against DS {ds} ({n} pennies)
+Your text (1 penny): {name} flips against DL {ds} ({n} penny)
+Your text (other numbers): {name} flips against DL {ds} ({n} pennies)
 
 #### `PD.Chat.HeadsOne` and `PD.Chat.Heads`
 Where: the line under the coins.
-Does: counts the heads against the DS.
+Does: counts the heads against the DL.
 Must keep: `{heads}` and `{ds}`
 Your text (1 head): {heads} head
 Your text (other numbers): {heads} heads
@@ -442,9 +442,9 @@ Must keep: `{name}`
 Your text: Sorry, {name} is dead.
 
 #### `PD.Notify.DsOverPennies`
-Who: the Director, on asking a DS higher than the row's pennies.
+Who: the Director, on asking a DL higher than the row's pennies.
 Must keep: `{name}` and `{ds}`
-Your text: Sorry, {name} can't succeed at DS {ds}.
+Your text: Sorry, {name} can't succeed at DL {ds}.
 
 #### `PD.Notify.NoChallenge`
 Who: someone who tries to flip when no flip was asked.
@@ -639,7 +639,7 @@ These aren't in the strings file, but the same rule applies.
   human-written), and the matching `description` in `module.json`.
 - **The odds journal**: its title and its one sentence under the title,
   which says what the table shows (the chance that a flip's heads meet or
-  beat the DS).
+  beat the DL).
 - **The How To**, `docs/how-to-module.md`: the sentences Claude added while
   checking your draft for facts. Rewrite them in your words, or tell Claude
   which facts you want and write them yourself. The facts it added were:
@@ -651,7 +651,7 @@ These aren't in the strings file, but the same rule applies.
   - Only a connected player with no Penny Dreadful character gets one. Anyone
     who connects while the game runs gets one too.
   - The coins never end the game. Ending asks first.
-  - A DS higher than the row's pennies can't be asked, because it couldn't be met.
+  - A DL higher than the row's pennies can't be asked, because it couldn't be met.
   - The skip-forward button spotlights the next row.
   - NPCs also go in the Penny Dreadful folder, marked (NPC-PD).
   - Click a name on the board to open it, pick the player or rename it (25

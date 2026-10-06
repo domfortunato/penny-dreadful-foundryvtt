@@ -230,13 +230,13 @@ export class PDScoreboard extends HandlebarsApplicationMixin(ApplicationV2) {
       dead: sys.dead,
       ds,
       pending: ds !== null,
-      // The odds of the pending challenge, and of each DS the Director could ask for.
+      // The odds of the pending challenge, and of each DL the Director could ask for.
       chance: ds !== null ? percent(chanceOfSuccess(sys.pennies, ds), game.i18n.lang) : null,
       canEdit,
       canFlip: ds !== null && canEdit && !sys.dead && !flipping,
       flipping,
       spotlight: actor.id === spotlightId,
-      // A DS above the row's pennies is out of reach and its pill is disabled,
+      // A DL above the row's pennies is out of reach and its pill is disabled,
       // except the pending one: clicking that is how the Director withdraws.
       dsOptions: Array.from({ length: MAX_DS }, (_, i) => {
         const n = i + 1;

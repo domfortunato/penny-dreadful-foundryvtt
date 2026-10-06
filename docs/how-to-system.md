@@ -22,9 +22,9 @@ to know:
   Dreadful folder and marked (PC-PD).
 - **Closed your scoreboard with the X?** Click the coins in the Token controls on
   the left, or press Alt+B, to bring it back.
-- **Ask a player for a flip:** click a DS number (1 to 5) on their row. The
+- **Ask a player for a flip:** click a DL number (1 to 5) on their row. The
   ask goes to chat as a card with a Flip button, and the row is spotlit.
-  Click the same number again to withdraw it. A DS higher than the pennies
+  Click the same number again to withdraw it. A DL higher than the pennies
   the row holds can't be asked, because it couldn't be met.
 - **Add or remove pennies by hand:** − and + on a row. Minus on a dead row
   brings the character back to life first.
@@ -44,7 +44,7 @@ to know:
   clears the chat log, benches the NPCs, and makes a fresh PC for each
   connected player. It asks first.
 - **What are the chances?** The % icon opens [a table of the odds](pd:odds)
-  of success for every DS against the pennies in a player's hand.
+  of success for every DL against the pennies in a player's hand.
 - **Settings:** the NPC Penny Limit (5 to 10) and automatic PCs are in
   Configure Settings → Penny Dreadful.
 
@@ -54,7 +54,7 @@ to know:
   scoreboard to change your character's name.
 - When the Director asks you to flip, a card appears in the chat with a
   **Flip** button, and the same button appears on your row. Click it once.
-- Heads count toward the Difficulty Score (DS). Meet or beat it and you
+- Heads count toward the Difficulty Level (DL). Meet or beat it and you
   succeed. Fail and you gain a penny. Failing while holding ten pennies is
   the end of your character. [The rules](pd:rules) have the rest, and
   [the odds table](pd:odds) shows your chances.

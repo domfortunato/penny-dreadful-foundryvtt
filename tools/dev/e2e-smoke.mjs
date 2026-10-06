@@ -13,7 +13,7 @@
  * (the same in both flavors); new PCs and NPCs land in the "Penny Dreadful"
  * actors folder unless created into another; the book and
  * percent buttons open the rules and the odds; Alice's
- * character is auto-created; a DS lands in chat as a card with a Flip button
+ * character is auto-created; a DL lands in chat as a card with a Flip button
  * (for Alice and the Director only; no dialog); the flip resolves and
  * the board follows; a forced ten-penny failure marks death; minus revives;
  * an NPC sits in its own section, dies on a forced five-penny failure and is
@@ -298,7 +298,7 @@ try {
       pageHeading: !!app?.element.querySelector(".journal-entry-page h1") };
   });
   check(odds.name === "Odds of Success" && odds.cells === 50 && odds.columns === 6 && odds.tenVsFive === "62.3%",
-    `percent button opened "${odds.name}" (${odds.cells} cells, DS 1-5, 10 vs DS 5 = ${odds.tenVsFive})`);
+    `percent button opened "${odds.name}" (${odds.cells} cells, DL 1-5, 10 vs DL 5 = ${odds.tenVsFive})`);
   check(!odds.recommended, "the odds journal has no recommended line or highlighted column");
   check(odds.oneVsTwo === "\u2014", `an impossible flip shows a dash (${odds.oneVsTwo})`);
   check(odds.headerHidden && odds.collapsed && !odds.pageHeading, `odds journal shows its name once (${JSON.stringify(odds)})`);
@@ -398,7 +398,7 @@ try {
   });
   check(Math.abs(names.own - names.want) < 0.5, `Alice's own name is full size (${names.own}px, want ${names.want}px)`);
 
-  // Director issues DS 1 to Alice.
+  // Director issues DL 1 to Alice.
   const aliceId = await gm.evaluate(() => game.actors.find((a) => a.name === "Alice")?.id);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="1"]`);
   // The ask is a chat card, never a dialog on the canvas.
@@ -489,7 +489,7 @@ try {
   }, aliceId);
   console.log(JSON.stringify(s4));
   if (s4.outcome === "death") check(s4.dead && s4.skull, "ten-penny failure marked Alice dead with a skull");
-  else check(!s4.dead && s4.pennies === 10, `ten pennies, ${s4.heads} heads vs DS 5: ${s4.outcome}`);
+  else check(!s4.dead && s4.pennies === 10, `ten pennies, ${s4.heads} heads vs DL 5: ${s4.outcome}`);
   await al.evaluate(() => { if (globalThis.__pdRandom) CONFIG.Dice.randomUniform = globalThis.__pdRandom; });
   await gm.screenshot({ path: `${OUT}/gm-3.png` });
 
@@ -509,11 +509,11 @@ try {
   check(deadDrop.ds === null && deadDrop.card?.state === "ended" && !deadDrop.card.button, `death from outside the flip clears the challenge and the card's Flip (${JSON.stringify(deadDrop)})`);
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.dead": false }); }, aliceId);
 
-  // The DS is fixed at 1-5: five buttons, no setting.
+  // The DL is fixed at 1-5: five buttons, no setting.
   const pills = await gm.evaluate((a) => document.querySelectorAll(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-action="issueChallenge"]`).length, aliceId);
-  check(pills === 5, `five DS buttons (${pills})`);
-  check(!(await gm.evaluate(() => game.settings.settings.has("penny-dreadful.maxDifficulty"))), "no Maximum Difficulty Score setting");
-  // Clicking the pending DS withdraws it, and its chat request says so. In
+  check(pills === 5, `five DL buttons (${pills})`);
+  check(!(await gm.evaluate(() => game.settings.settings.has("penny-dreadful.maxDifficulty"))), "no Maximum Difficulty Level setting");
+  // Clicking the pending DL withdraws it, and its chat request says so. In
   // between, a write above 5 from outside the board: the field clamps it to 5
   // (14.365 NumberField) and the challenge survives with its token intact,
   // never wiped (migrateData leaves update input alone).
@@ -525,14 +525,14 @@ try {
     try { await actor.update({ "system.challenge.ds": 7 }); } catch (err) { return { error: String(err.message).slice(0, 80) }; }
     return { ds: actor.system.challenge.ds, sameToken: actor.system.challenge.issuedAt === before };
   }, aliceId);
-  check(overDs.ds === 5 && overDs.sameToken === true, `a write of DS 7 is clamped to 5 and keeps the challenge (${JSON.stringify(overDs)})`);
+  check(overDs.ds === 5 && overDs.sameToken === true, `a write of DL 7 is clamped to 5 and keeps the challenge (${JSON.stringify(overDs)})`);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="5"]`);
   await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === null, aliceId, { timeout: 10000 }).catch(() => {});
   await gm.waitForFunction(() => [...document.querySelectorAll("#chat .pd-request-card")].pop()?.dataset.state === "withdrawn", null, { timeout: 10000 }).catch(() => {});
   const wcard = await lastCard(gm);
-  check(wcard?.state === "withdrawn" && !wcard.button, `clicking the pending DS withdraws it; its request reads withdrawn (${JSON.stringify(wcard)})`);
+  check(wcard?.state === "withdrawn" && !wcard.button, `clicking the pending DL withdraws it; its request reads withdrawn (${JSON.stringify(wcard)})`);
 
-  // A DS above the row's pennies cannot be asked; only the pending pill
+  // A DL above the row's pennies cannot be asked; only the pending pill
   // survives a penny drop, because clicking it is the withdraw.
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 3 }); }, aliceId);
   await gm.waitForFunction((a) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="4"]`)?.disabled === true, aliceId, { timeout: 10000 }).catch(() => {});
@@ -540,7 +540,7 @@ try {
     const pill = (n) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="${n}"]`);
     return { d3: pill(3).disabled, d4: pill(4).disabled, d5: pill(5).disabled, tip4: pill(4).dataset.tooltip };
   }, aliceId);
-  check(!reach.d3 && reach.d4 && reach.d5 && /not allowed/.test(reach.tip4), `DS pills above the pennies are disabled (${JSON.stringify(reach)})`);
+  check(!reach.d3 && reach.d4 && reach.d5 && /not allowed/.test(reach.tip4), `DL pills above the pennies are disabled (${JSON.stringify(reach)})`);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="3"]`);
   await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === 3, aliceId, { timeout: 10000 }).catch(() => {});
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 1 }); }, aliceId);
@@ -552,7 +552,7 @@ try {
   check(!withdrawable.pending && !withdrawable.lower && withdrawable.mid, `the pending pill stays clickable below its pennies (${JSON.stringify(withdrawable)})`);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="3"]`);
   await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === null, aliceId, { timeout: 10000 })
-    .then(() => ok("withdrawing an out-of-reach pending DS still works")).catch(() => fail("withdrawing an out-of-reach pending DS still works"));
+    .then(() => ok("withdrawing an out-of-reach pending DL still works")).catch(() => fail("withdrawing an out-of-reach pending DL still works"));
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 10 }); }, aliceId);
 
   // NPC add via API path (dialog is exercised by hand).

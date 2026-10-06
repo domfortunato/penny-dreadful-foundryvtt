@@ -21,7 +21,7 @@ const openJournal = async (id, name, options = {}) => {
 /** The shipped rules journal. */
 export const openRules = () => openJournal(RULES_JOURNAL_ID, "Penny Dreadful Rules");
 
-/** The table of success chances for every hand of pennies and every DS. */
+/** The table of success chances for every hand of pennies and every DL. */
 export const openOdds = () => openJournal(ODDS_JOURNAL_ID, "Odds of Success", { expanded: false });
 
 /**

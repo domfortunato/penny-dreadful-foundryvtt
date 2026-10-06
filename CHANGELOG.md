@@ -24,7 +24,7 @@ body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 
 ## 0.2.1
 
-- The Director can no longer ask for a DS higher than the pennies a row holds — such a flip cannot be met. The button is greyed out with a tooltip saying why, and the pending DS stays clickable so it can still be withdrawn even after pennies drop below it
+- The Director can no longer ask for a DL higher than the pennies a row holds — such a flip cannot be met. The button is greyed out with a tooltip saying why, and the pending DL stays clickable so it can still be withdrawn even after pennies drop below it
 - Review fixes: the one-shot reset clears the spotlight before touching any row, so a spotlight sitting on an NPC no longer hops onto a character mid-reset (and, with two Directors connected, can no longer survive the reset pointing at a deleted one); notices show character names exactly as typed, even names with angle brackets; the reset confirm formats its message and character counts for the reader's locale
 
 ## 0.2.0
@@ -45,9 +45,9 @@ body before anything is written. The procedure is in [RELEASE.md](RELEASE.md).
 **Requires Foundry VTT 14.365 or higher.** No modules are needed.
 
 - The scoreboard: one row per character, ten penny slots and a column for the dead; opens for everyone, can be dragged or popped out into its own window, never minimized or closed, and sized from 100% to 200% per player
-- The Director issues a challenge with the DS buttons on a row; a card in chat asks the player to flip, with a Flip button (the board has one too); only the player and the Director can flip that row; the pennies are rolled as Foundry coins and the result lands in chat
+- The Director issues a challenge with the DL buttons on a row; a card in chat asks the player to flip, with a Flip button (the board has one too); only the player and the Director can flip that row; the pennies are rolled as Foundry coins and the result lands in chat
 - No module is required or configured. If Dice So Nice happens to be active, the board waits for its coins to land and the Director can hold each flip's coins on every screen until they clear them
-- Odds of success: every DS button shows the chance for that row's pennies, and a table for every hand of 1 to 10 pennies against DS 1 to 5 ships as a journal, one click from the board
+- Odds of success: every DL button shows the chance for that row's pennies, and a table for every hand of 1 to 10 pennies against DL 1 to 5 ships as a journal, one click from the board
 - Failures add a penny; a failure at ten pennies marks the character dead
 - Spotlight: the row whose turn it is, advanced by the Director or automatically after each flip
 - NPCs can be put on the board and flipped by the Director; they sit in their own section under the characters, hold five pennies at most by default, and a failure with a full hand is the end of them

@@ -30,7 +30,7 @@ const OUTCOME_TEXT = {
 };
 
 /**
- * The one mechanic. Flip every penny the actor holds against the pending DS,
+ * The one mechanic. Flip every penny the actor holds against the pending DL,
  * show the coins, then write the result.
  *
  * The roll is `{n}dc`: Foundry's Coin term, result 1 = heads, so the total is
@@ -88,7 +88,7 @@ export const flip = async (actor) => {
       tally: t(pluralKey(heads, { one: "PD.Chat.HeadsOne", other: "PD.Chat.Heads" }), { heads, ds }),
     });
     // The card's title is the whole statement, "Alice flips 3 pennies against
-    // DS 2", in place of the speaker's name: the name alone followed by the
+    // DL 2", in place of the speaker's name: the name alone followed by the
     // same sentence read twice. A character keeps its actor link; an NPC
     // speaks by that sentence alone, so nothing that filters messages by who
     // owns the speaker applies to it.

@@ -26,7 +26,7 @@
  * when the first one needs it, and a host actor never is (the run starts
  * with no folder); the How To opens for the Director at startup and for a player
  * only once the game opens their board; a PC added from the board carries
- * the namespaced type, takes a DS and flips from the chat card; the one-shot
+ * the namespaced type, takes a DL and flips from the chat card; the one-shot
  * reset deletes only the mini game's own actors and messages — the host's
  * actor and chat message survive — and makes the connected player a fresh
  * PC (the game is running); the rules journal opens
@@ -499,7 +499,7 @@ try {
       "…with no end confirm, and the game still running");
   } else note("no coin on screen without a canvas; Alt+B brings the board back");
 
-  /* ----------------------------------------- stage 5: a PC, a DS, a flip */
+  /* ----------------------------------------- stage 5: a PC, a DL, a flip */
   console.log("\nStage 5: play a beat of the game");
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="addCharacter"]').click());
   await gm.waitForFunction(() => document.querySelectorAll(".pd-dialog").length > 0, null, { timeout: 10000 });
@@ -542,7 +542,7 @@ try {
     document.querySelector(`#pd-scoreboard tr[data-actor-id="${id}"] button[data-action="issueChallenge"][data-ds="1"]`).click();
   }, pcId);
   await gm.waitForFunction((id) => game.actors.get(id)?.system.challenge.ds === 1, pcId, { timeout: 10000 })
-    .then(() => ok("the Director asked for a DS 1")).catch(() => fail("the Director asked for a DS 1"));
+    .then(() => ok("the Director asked for a DL 1")).catch(() => fail("the Director asked for a DL 1"));
   await gm.waitForFunction(() => !!document.querySelector("#chat .pd-request-flip, #chat-log .pd-request-flip"), null, { timeout: 10000 })
     .then(() => ok("the ask landed in the host's chat as a card with a Flip button"))
     .catch(() => fail("the ask landed in the host's chat as a card with a Flip button"));

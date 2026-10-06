@@ -16,21 +16,21 @@ export const clearChallenge = async (actor) => {
 
 /**
  * The Director asks for a flip: the challenge on the row, and a card in chat
- * with a Flip button. Clicking the DS that is already pending withdraws it,
+ * with a Flip button. Clicking the DL that is already pending withdraws it,
  * which is the Director's undo; the card then says so.
  */
 export const issueChallenge = async (actor, ds) => {
   if (!isDirector() || !actor) return;
   if (actor.system.dead) return ui.notifications.warn("PD.Notify.Dead", { format: { name: actor.name } });
   ds = Math.clamp(Math.round(Number(ds)), 1, MAX_DS);
-  // Withdrawing the pending DS comes first and is always allowed, even when
+  // Withdrawing the pending DL comes first and is always allowed, even when
   // the pennies have since dropped below it: the pill is the undo.
   if (actor.system.challenge.ds === ds) return clearChallenge(actor);
-  // A DS above the row's pennies cannot be met (Dom's ruling): never ask it.
+  // A DL above the row's pennies cannot be met (Dom's ruling): never ask it.
   if (ds > actor.system.pennies) {
     return ui.notifications.warn("PD.Notify.DsOverPennies", { format: { name: actor.name, ds } });
   }
-  // A new DS over a pending one replaces it: the old request is withdrawn.
+  // A new DL over a pending one replaces it: the old request is withdrawn.
   await withdrawRequests(actor);
   await actor.update({ "system.challenge": { ds, issuedBy: game.user.id, issuedAt: Date.now() } });
   // The ask goes to chat, where the player (or the Director) flips from the card.

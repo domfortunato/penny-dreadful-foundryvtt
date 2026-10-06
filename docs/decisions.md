@@ -130,17 +130,23 @@ Keep adding to "Things learned the hard way".
   adds `pd-journal` to their sheet, and the stylesheet hides Foundry's name
   field there, so the name shows once, in the window title. A flag, not a pack
   check, so an imported copy keeps it. The odds page hides its own heading
-  and opens with the sidebar collapsed. Its table is 1-10 pennies by DS 1-5.
-- The DS is fixed at 1-5 (`MAX_DS`), as the rules say. A Director setting to
-  raise it to 10, and odds columns for DS 6-10, were tried and removed on
+  and opens with the sidebar collapsed. Its table is 1-10 pennies by DL 1-5.
+- Dom renamed the Difficulty Score (DS) to the Difficulty Level (DL) everywhere
+  people read it (2026-10-05): rules, How To, UI strings, README, listing,
+  odds table, changelog. Internal names kept the old letters on purpose, so no
+  data migration: the stored `challenge.ds` field, `MAX_DS`, the `{ds}`
+  placeholder and the `PD.Notify.DsOverPennies` key. Chat cards already in a
+  world keep "DS" in their baked roll flavor.
+- The DL is fixed at 1-5 (`MAX_DS`), as the rules say. A Director setting to
+  raise it to 10, and odds columns for DL 6-10, were tried and removed on
   Dom's ruling; `PennyActorModel.migrateData` drops a challenge left pending
   above 5 from that time, on load and create only: core migrates update
   input too (`partial`), and an update must not become a clear. Also Dom's
-  ruling (2026-09-28): a DS above the row's CURRENT PENNIES cannot be asked
+  ruling (2026-09-28): a DL above the row's CURRENT PENNIES cannot be asked
   (it cannot be met — the odds table shows a dash there). `issueChallenge`
   refuses it with a notice and the pill is disabled, EXCEPT the pending
   pill, which stays clickable even when pennies have since dropped below
-  it: clicking the pending DS is the withdraw, and the refusal is checked
+  it: clicking the pending DL is the withdraw, and the refusal is checked
   after the withdraw branch for the same reason.
 - A NUMBERFIELD CLAMPS, IT DOES NOT REJECT. In 14.365 `NumberField._cleanType`
   (`common/data/fields.mjs`) rounds a value into its min/max when cleaning,

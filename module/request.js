@@ -5,7 +5,7 @@ import { canFlipFor, flip, isFlipping } from "./flip.js";
 /**
  * The Director's challenge, posted to chat as a card with a Flip button.
  *
- * The stored message holds only the request (whose row, which DS, the
+ * The stored message holds only the request (whose row, which DL, the
  * challenge token) and an empty action area. What the card shows is decided
  * each time it is drawn, on each client: the Flip button for the Director and
  * the row's own player while the challenge is still the one this card asked
