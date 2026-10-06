@@ -1,8 +1,10 @@
-# Penny Dreadful for Foundry VTT
+# Penny Dreadful mini-game for Foundry VTT
 
-A Foundry VTT system for **Penny Dreadful**, a horror-movie game by
+A Foundry VTT module for **Penny Dreadful**, a horror-movie game by
 [Daniel Fitzpatrick](https://baphelon.itch.io/) with exactly one mechanic:
-flip your pennies.
+flip your pennies. The Penny Dreadful mini-game provides a fully automated
+scoreboard to run Penny Dreadful inside an existing Foundry world, with any
+system.
 
 The Game Master is **The Director**. Every player starts with one penny. When the
 Director asks for a check or a save they name a Difficulty Score (1 to 5); the
@@ -18,7 +20,7 @@ every PC's and NPC's pennies and flips:
 
 ![The Director's view: the board with a PC in the spotlight asked to flip against DS 3 and an NPC below, and in the chat an ask, a successful flip and a pending Flip button](docs/director-pov.png)
 
-## What the system does
+## What the module does
 
 - **The scoreboard**: a compact, semi-transparent window that opens for everyone.
   One row per character, ten penny slots, an eleventh column for the dead; the
@@ -59,35 +61,34 @@ every PC's and NPC's pennies and flips:
 
 ## Installing
 
-Foundry VTT 14.365 or newer. In Setup, Game Systems, Install System, paste:
-
-```
-https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.json
-```
-
-## The mini-game module
-
-The same game also ships as a **module**, for running a Penny Dreadful
-one-shot as an interlude inside another system's world. Install it from
-Setup, Add-on Modules, Install Module:
+Foundry VTT 14.365 or newer. In Setup, Add-on Modules, Install Module, paste:
 
 ```
 https://github.com/domfortunato/penny-dreadful-module-foundryvtt/releases/latest/download/module.json
 ```
 
-Enable it in the world, and the GM starts the mini game with the coin
+Enable it in the world, and the GM starts the mini-game with the coin
 button in the Token controls (or, with no scene active, from the board's
 header menu ⋮ — Alt+B opens the board — or Configure Settings): the
 scoreboard opens on every screen. The coin only ever starts the game or
 brings a closed board back; ending is the board's ⋮ menu, which asks first
 and closes the board everywhere. As a guest in your campaign the module
 behaves itself: the board opens, and PCs are created for players, only while
-the mini game runs; its "new one-shot" reset deletes only the mini game's
+the mini-game runs; its "new one-shot" reset deletes only the mini-game's
 own actors and chat messages; and your world's labels and players' own
 characters are never touched.
 Its PCs and NPCs appear in the Actors tab as their own clearly labelled
 types beside your system's, in their own *Penny Dreadful* folder. The board
 itself works the same in the system and the module.
+
+## The system
+
+The same game also ships as a **system**. In Setup, Game Systems, Install
+System, paste:
+
+```
+https://github.com/domfortunato/penny-dreadful-foundryvtt/releases/latest/download/system.json
+```
 
 Both the system and the module open a short **How To** at startup (with a
 "Show this next time" box), and the board's ? button brings it back.
@@ -114,7 +115,7 @@ This distribution is not under a single licence; see [LICENSE.txt](LICENSE.txt).
   built packs): Penny Dreadful (c) 2026 by Daniel Fitzpatrick is licensed under
   [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The text
   shipped here is an adaptation for Foundry VTT under the same licence.
-  Daniel Fitzpatrick wrote the game; he is not involved in this Foundry system
+  Daniel Fitzpatrick wrote the game; he is not involved in this Foundry module
   and does not endorse it.
 - **Code** (`module/`, `templates/`, `css/`, `lang/`, `tools/`, `system.json`,
   `module.json`):
