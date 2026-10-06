@@ -1,7 +1,7 @@
 {
   "id": "penny-dreadful-module",
   "title": "Penny Dreadful (Mini Game)",
-  "description": "A horror-movie game with one mechanic: flip your pennies — as a mini game inside any other system's world, for a one-shot interlude on its own scoreboard that leaves the host campaign untouched. The game rules are by Daniel Fitzpatrick (CC BY-SA 4.0); this Foundry VTT module is an independent adaptation he is not involved in.",
+  "description": "<p>Penny Dreadful is a truly minimalist TTRPG system with no character sheets and a very simple resolution mechanic: each player starts with one penny. When they need to make a save, the Director gives them a Difficulty Score (DS) and they flip their pennies. Heads count 1 and tails count 0. If the number of heads meets or beats the DS, they pass the save. If not, they might still succeed in their action, but their doom comes closer, and they add another penny to their hand. The DS is variable, but the maximum is 5. If a player holds ten pennies and fails a save, it's the end of their rope.</p><p>The Penny Dreadful mini-game provides a fully automated scoreboard to run Penny Dreadful inside an existing Foundry world, with any system. The Dice So Nice module is recommended, because nothing builds tension like flipping a handful of pennies to decide your fate.</p><p>Daniel Fitzpatrick created the Penny Dreadful game rules under CC BY-SA 4.0, and he is not involved in this project. You can view and download his Penny Dreadful rules and adventures at <a href=\"https://baphelon.itch.io/penny-dreadful\">baphelon.itch.io/penny-dreadful</a>.</p>",
   "version": "0.3.1",
   "compatibility": {
     "minimum": "14.365",
