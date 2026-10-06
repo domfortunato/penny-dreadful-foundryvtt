@@ -86,7 +86,7 @@ const countYaml = dir =>
  *
  * In THIS system the only pack is the rules journal, generated from
  * docs/player-facing-rules.md and the odds table. An edit made to it inside
- * Foundry belongs in the markdown, never in the YAML (see CLAUDE.md).
+ * Foundry belongs in the markdown, never in the YAML (see CLAUDE.md and docs/decisions.md).
  */
 const SYNC_MARKER = path.join(root, ".pack-sync.json");
 
