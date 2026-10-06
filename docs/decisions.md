@@ -7,7 +7,7 @@ Keep adding to "Things learned the hard way".
 
 ## Versions and shape
 
-- Target `compatibility {minimum: "14.365", verified: "14.367"}`. No shims for
+- Target `compatibility {minimum: "14.365", verified: "14.368"}`. No shims for
   older cores. Node 24.
 - Plain ES modules, no bundler, no jQuery. Sheets and the scoreboard are
   ApplicationV2 + HandlebarsApplicationMixin; every part renders exactly one root
@@ -331,3 +331,11 @@ Keep adding to "Things learned the hard way".
   format values and skips `cleanHTML` (notifications.mjs:108-122), where a
   pre-formatted message is sanitized instead and a player name like
   "Bob <the Bold>" loses its markup-looking part (sixth review).
+  A notice with nothing to fill in passes `{localize: true}` instead: from
+  14.368 `notify()` localizes only when `localize` or `format` is set
+  (notifications.mjs:108-123; 14.365 always did), so a bare key shows raw
+  (found testing on 14.368: `MiniGameStillRunning`, `ModuleInSystemWorld`).
+- 14.368 changed two things the dev smokes touch. The join page is a typed
+  `username` field, not a user list; and every POST to the server needs an
+  `Origin` header, or it answers "The request could not be processed."
+  `tools/dev/join.mjs` handles the first, `setupPost` the second.

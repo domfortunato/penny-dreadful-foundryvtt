@@ -35,6 +35,7 @@ import { createRequire } from "node:module";
 import { existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { submitJoin } from "./join.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const candidates = [process.env.PLAYWRIGHT_DIR, ROOT, resolve(ROOT, "..", "air-bladder")].filter(Boolean);
@@ -83,18 +84,7 @@ async function dismissChrome(page) {
 }
 
 async function joinAs(page, name) {
-  await page.goto(`${URL}/join`, { waitUntil: "networkidle", timeout: 60000 });
-  await page.waitForSelector('select[name="userid"] option[value]:not([value=""])', { state: "attached", timeout: 30000 });
-  const picked = await page.evaluate((name) => {
-    const s = document.querySelector('select[name="userid"]');
-    const opt = [...s.options].find((o) => o.value && (name === null || o.textContent.trim() === name));
-    if (!opt) return null;
-    s.value = opt.value;
-    s.dispatchEvent(new Event("change", { bubbles: true }));
-    return opt.textContent.trim();
-  }, name);
-  if (!picked) throw new Error(`joinAs: no user ${name ?? "(first)"} offered`);
-  await page.locator('button[type="submit"][name="join"], form#join-game button[type="submit"]').first().click({ timeout: 15000 });
+  const picked = await submitJoin(page, URL, name, ["The Director"]);
   await page.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90000 });
   await dismissChrome(page);
   return picked;

@@ -15,6 +15,7 @@ import { createRequire } from "node:module";
 import { existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { submitJoin } from "./join.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const candidates = [process.env.PLAYWRIGHT_DIR, ROOT, resolve(ROOT, "..", "air-bladder")].filter(Boolean);
@@ -33,10 +34,7 @@ try {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`${URL}/join`, { waitUntil: "networkidle" });
-  await page.waitForSelector('select[name="userid"] option[value]:not([value=""])', { state: "attached" });
-  await page.evaluate(() => { const s = document.querySelector('select[name="userid"]'); s.value = [...s.options].find((o) => o.textContent.trim() === "The Director").value; s.dispatchEvent(new Event("change", { bubbles: true })); });
-  await page.locator('button[type="submit"][name="join"], form#join-game button[type="submit"]').first().click();
+  await submitJoin(page, URL, "The Director");
   await page.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90000 });
   await page.waitForTimeout(1500);
   await page.evaluate(() => { document.querySelectorAll("#notifications > li").forEach((e) => e.remove()); });

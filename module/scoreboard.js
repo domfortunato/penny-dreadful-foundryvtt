@@ -394,7 +394,7 @@ export const setMiniGame = async (active) => {
       // Enter, Escape and the dialog's X all cancel (by design), so a
       // Director can miss that nothing happened — say so (Dom thought he
       // had ended a game that was still running).
-      ui.notifications.info("PD.Notify.MiniGameStillRunning");
+      ui.notifications.info("PD.Notify.MiniGameStillRunning", { localize: true });
       return false;
     }
   }

@@ -35,7 +35,7 @@ export const boot = () => {
     if (standDown()) {
       log("the Penny Dreadful system is running this world; the module stays off");
       Hooks.once("ready", () => {
-        if (game.user.isGM) ui.notifications.warn("PD.Notify.ModuleInSystemWorld", { permanent: true });
+        if (game.user.isGM) ui.notifications.warn("PD.Notify.ModuleInSystemWorld", { localize: true, permanent: true });
       });
       return;
     }

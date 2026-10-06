@@ -11,7 +11,7 @@ with a one-line rule here.
 
 ## Versions and shape
 
-- Target `compatibility {minimum: "14.365", verified: "14.367"}`. No shims for
+- Target `compatibility {minimum: "14.365", verified: "14.368"}`. No shims for
   older cores. Node 24.
 - Plain ES modules, no bundler, no jQuery. Sheets and the scoreboard are
   ApplicationV2 + HandlebarsApplicationMixin; every part renders one root element.
@@ -102,4 +102,5 @@ with a one-line rule here.
 - The How To opens by itself the first time only; its links are `pd:` and `#` links.
 - Module translations merge after the system's: bare TYPES labels live in
   `lang/en-system.json`, which only the system loads.
-- Notices pass the KEY plus `{format}`, never a string pre-formatted with `t()`.
+- Notices pass the KEY plus `{format}` (or `{localize: true}` when there is nothing
+  to fill in; 14.368 shows a bare key raw), never a string pre-formatted with `t()`.
