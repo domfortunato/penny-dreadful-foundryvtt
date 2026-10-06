@@ -39,7 +39,7 @@
   "PD.Board.Zoom": "Zoom",
   "PD.Chat.DeathDetail": "With {pennies} pennies, this is the end for {name}",
   "PD.Chat.FailDetail": "Doom comes closer. {name} now holds {pennies} pennies.",
-  "PD.Chat.Failure": "Nope!",
+  "PD.Chat.Failure": "Failure!",
   "PD.Chat.Flavor": "{name} flips against DL {ds} ({n} pennies)",
   "PD.Chat.FlavorOne": "{name} flips against DL {ds} ({n} penny)",
   "PD.Chat.Heads": "{heads} heads",

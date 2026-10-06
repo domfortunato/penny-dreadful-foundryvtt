@@ -287,7 +287,7 @@ Your text: Success!
 
 #### `PD.Chat.Failure`
 Where: the badge on a failed flip.
-Your text: Nope!
+Your text: Failure!
 
 #### `PD.Chat.FailDetail`
 Where: the line under a failure.
