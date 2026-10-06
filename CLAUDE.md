@@ -353,7 +353,7 @@ junction to this folder; the local 14.365 app runs on :30000.
     unknown `pd:` link or a dangling `#` anchor fails the import. `npm run
     import:howto` (also chained into `import:rules`) generates BOTH the
     window's bodies (`templates/how-to/*.html`, each flavor its own
-    guide) and a compendium journal, "How to Play Penny Dreadful", one
+    guide) and a compendium journal, "Scoreboard Instructions", one
     page per guide (both flavors ship the same packs, so the journal
     carries both, named for where each applies); then `npm run
     build:packs` with Foundry stopped. Never edit the generated templates

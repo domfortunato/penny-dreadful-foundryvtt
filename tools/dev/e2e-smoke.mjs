@@ -202,7 +202,7 @@ try {
       holdButton: !!el?.querySelector('button[data-action="holdCoins"]'),
       rulesPack: !!game.packs.get("penny-dreadful.rules"),
       rulesIndex: game.packs.get("penny-dreadful.rules")?.index.size,
-      howToJournal: !!game.packs.get("penny-dreadful.rules")?.index.find((e) => e.name === "How to Play Penny Dreadful"),
+      howToJournal: !!game.packs.get("penny-dreadful.rules")?.index.find((e) => e.name === "Scoreboard Instructions"),
       sceneTool: !!ui.controls?.controls?.tokens?.tools?.pdScoreboard,
     };
   });
@@ -550,7 +550,7 @@ try {
     const pill = (n) => document.querySelector(`#pd-scoreboard tr[data-actor-id="${a}"] button[data-ds="${n}"]`);
     return { d3: pill(3).disabled, d4: pill(4).disabled, d5: pill(5).disabled, tip4: pill(4).dataset.tooltip };
   }, aliceId);
-  check(!reach.d3 && reach.d4 && reach.d5 && /out of reach/.test(reach.tip4), `DS pills above the pennies are disabled (${JSON.stringify(reach)})`);
+  check(!reach.d3 && reach.d4 && reach.d5 && /not allowed/.test(reach.tip4), `DS pills above the pennies are disabled (${JSON.stringify(reach)})`);
   await gm.click(`#pd-scoreboard tr[data-actor-id="${aliceId}"] button[data-action="issueChallenge"][data-ds="3"]`);
   await gm.waitForFunction((a) => game.actors.get(a).system.challenge.ds === 3, aliceId, { timeout: 10000 }).catch(() => {});
   await gm.evaluate(async (id) => { await game.actors.get(id).update({ "system.pennies": 1 }); }, aliceId);
@@ -579,7 +579,7 @@ try {
     const alice = rows.findIndex((r) => r.classList.contains("pd-row") && r.textContent.includes("Alice"));
     return { sections, npc, alice, slots: rows[npc]?.querySelectorAll("td.pd-penny").length, max: game.actors.get(id).system.maxPennies };
   }, npcId);
-  check(s5.sections.length === 2 && s5.sections[0].label === "PCs" && s5.sections[1].label === "NPCs"
+  check(s5.sections.length === 2 && s5.sections[0].label === "Player Characters" && s5.sections[1].label === "Non-Player Characters"
     && s5.sections[0].i < s5.alice && s5.alice < s5.sections[1].i && s5.sections[1].i < s5.npc,
     `PCs and NPCs sit under their own dividers (${JSON.stringify({ sections: s5.sections, alice: s5.alice, npc: s5.npc })})`);
   check(s5.slots === 5 && s5.max === 5, `NPC row shows ${s5.slots} penny slots`);
@@ -802,7 +802,7 @@ try {
     const d = [...document.querySelectorAll(".pd-dialog")].pop();
     return [...d.querySelectorAll('select[name="actor"] option')].find((o) => o.value === id)?.textContent.trim();
   }, extraId);
-  check(offered2 === "Smoke Extra (Bob)", `the add dialog names the character's player (${offered2})`);
+  check(offered2 === "Smoke Extra - Bob", `the add dialog names the character's player (${offered2})`);
   await gm.evaluate(async () => {
     for (const a of foundry.applications.instances.values()) if (a instanceof foundry.applications.api.DialogV2) await a.close();
   });
@@ -837,8 +837,8 @@ try {
   check(/fa-user-plus/.test(icons.addCharacter) && /fa-user-secret/.test(icons.addNpc) && /fa-user-slash/.test(icons.remove),
     `person-plus adds a PC, the stranger an NPC, a slashed person removes (${JSON.stringify(icons)})`);
   check(/fa-clapperboard/.test(icons.oneShot) && icons.zoomIcon, "the one-shot clapperboard and the size magnifier are on the toolbar");
-  check(await al.evaluate(() => document.querySelector("#pd-scoreboard .pd-name-btn")?.dataset.tooltip === "Edit"),
-    'the name button\'s tooltip reads "Edit"');
+  check(await al.evaluate(() => document.querySelector("#pd-scoreboard .pd-name-btn")?.dataset.tooltip === "Rename character"),
+    'the name button\'s tooltip reads "Rename character"');
 
   // The size dropdown: 100%-200% presets, a fresh client's 110%, a pick that sticks.
   const zoom = await gm.evaluate(async () => {
@@ -879,7 +879,7 @@ try {
       lastState: last?.dataset.state, button: !!last?.querySelector("button.pd-request-flip"),
       flips: game.messages.filter((m) => m.getFlag("penny-dreadful", "flip")?.actorId === id).length };
   }, goneId);
-  check(gone.cards === 2 && gone.firstState === "flipped" && gone.firstText === "Smoke Gone flipped", `a deleted row's old request still names it (${JSON.stringify(gone)})`);
+  check(gone.cards === 2 && gone.firstState === "flipped" && gone.firstText === "Smoke Gone has flipped", `a deleted row's old request still names it (${JSON.stringify(gone)})`);
   check(gone.lastState === "ended" && !gone.button && gone.flips === 1, `a deleted row's pending request offers no Flip (${JSON.stringify(gone)})`);
   await gm.screenshot({ path: `${OUT}/gm-4.png` });
 
@@ -892,7 +892,7 @@ try {
   // The confirm says only what this reset will do (seventh review): with
   // auto-create on here, the fresh character is promised; no host campaign.
   const oneShotText = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop().querySelector(".window-content")?.textContent ?? "");
-  check(/fresh character is created/.test(oneShotText) && !/host campaign/.test(oneShotText) && /PCs? (is|are) deleted/.test(oneShotText),
+  check(/will get a fresh PC/.test(oneShotText) && !/other actors and chat/.test(oneShotText) && /characters? (is|are) deleted/.test(oneShotText),
     `the one-shot confirm matches what the reset does (${oneShotText.replace(/\s+/g, " ").trim().slice(0, 160)})`);
   await gm.evaluate(() => { [...document.querySelectorAll(".pd-dialog")].pop().querySelector('button[data-action="yes"]').click(); });
   // Settled means: chat empty, the fresh row created AND rendered, and the

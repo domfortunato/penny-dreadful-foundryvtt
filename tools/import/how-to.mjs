@@ -75,7 +75,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const dry = process.argv.includes("--dry");
 
 export const JOURNAL_ID = idFor("penny-dreadful-howto:journal");
-const ENTRY_NAME = "How to Play Penny Dreadful";
+const ENTRY_NAME = "Scoreboard Instructions";
 const GUIDES = [
   { flavor: "system", page: "In a Penny Dreadful World" },
   { flavor: "module", page: "As a Mini Game in Another World" },

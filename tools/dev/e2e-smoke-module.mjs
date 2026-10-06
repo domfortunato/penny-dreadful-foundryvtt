@@ -236,7 +236,7 @@ try {
   const guide = await gm.evaluate(() => ({
     headings: [...document.querySelectorAll("#pd-how-to .pd-how-to-body h2")].map((h) => h.textContent.trim()),
     // \s+: the markdown wraps the phrase, and marked keeps the newline.
-    miniGame: /Start the\s+Penny Dreadful\s+Mini Game/.test(document.querySelector("#pd-how-to .pd-how-to-body")?.textContent ?? ""),
+    miniGame: /Start the\s+Penny Dreadful\s+mini-game/.test(document.querySelector("#pd-how-to .pd-how-to-body")?.textContent ?? ""),
   }));
   check(guide.headings.includes("For the Director") && guide.headings.includes("For Players") && guide.miniGame,
     `the module's own How To, with the mini game's Start (${guide.headings.join(" / ")})`);
@@ -284,12 +284,12 @@ try {
     gmLabel: game.i18n.localize("USER.RoleGamemaster"),
     pack: !!game.packs.get(`${id}.rules`),
     packSize: game.packs.get(`${id}.rules`)?.index.size ?? 0,
-    howToJournal: !!game.packs.get(`${id}.rules`)?.index.find((e) => e.name === "How to Play Penny Dreadful"),
+    howToJournal: !!game.packs.get(`${id}.rules`)?.index.find((e) => e.name === "Scoreboard Instructions"),
   }), MODULE_ID);
   check(s2.system === HOST_SYSTEM, `the host system is ${s2.system}`);
   check(s2.types.length === 2 && s2.models.length === 2, `both sub-types registered namespaced (${s2.types.join(", ")})`);
   check(s2.hostModels > 0, `the host's own data models survive the merge (${s2.hostModels} of them)`);
-  check(s2.pcLabel === "Character (Penny Dreadful)", `the PC type label localizes (${s2.pcLabel})`);
+  check(s2.pcLabel === "PC (Penny Dreadful)", `the PC type label localizes (${s2.pcLabel})`);
   check(s2.boardOpen === false, "the board stays closed while the mini game is off");
   check(s2.autoCreateDefault === true, "auto-create defaults ON in the module (it acts only while the game runs)");
   check(s2.miniGame === false, "the mini-game toggle starts off");
@@ -409,8 +409,8 @@ try {
     "the board's toolbar carries no power button");
   check(!(await boardRendered(bob)), "Bob's board stays shut until the game starts");
   const offMenu = await menuEntries(gm);
-  check(offMenu.includes("Start the Penny Dreadful Mini Game"), `the ⋮ menu offers Start (${offMenu.join(" / ")})`);
-  await clickMenu(gm, "Start the Penny Dreadful Mini Game");
+  check(offMenu.includes("Start the Penny Dreadful mini-game and open the scoreboard on every canvas"), `the ⋮ menu offers Start (${offMenu.join(" / ")})`);
+  await clickMenu(gm, "Start the Penny Dreadful mini-game and open the scoreboard on every canvas");
   await gm.waitForFunction((id) => game.settings.get(id, "miniGameActive") === true, MODULE_ID, { timeout: 10000 })
     .then(() => ok("Start from the ⋮ menu started the mini game, no confirm")).catch(() => fail("Start from the ⋮ menu started the mini game, no confirm"));
   await gm.waitForFunction(() => !!foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
@@ -453,19 +453,19 @@ try {
 
   // Ending asks first. Cancel changes nothing; End closes every board.
   const onMenu = await menuEntries(gm);
-  check(onMenu.includes("End the Penny Dreadful Mini Game"), `with the game on, the ⋮ menu offers End (${onMenu.join(" / ")})`);
-  await clickMenu(gm, "End the Penny Dreadful Mini Game");
+  check(onMenu.includes("End the Penny Dreadful mini-game and close the scoreboard on every canvas"), `with the game on, the ⋮ menu offers End (${onMenu.join(" / ")})`);
+  await clickMenu(gm, "End the Penny Dreadful mini-game and close the scoreboard on every canvas");
   await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="no"]'), null, { timeout: 5000 })
     .then(() => ok("End asks first")).catch(() => fail("End asks first"));
   const endBody = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop()?.querySelector(".window-content")?.textContent ?? "");
-  check(/will close/.test(endBody) && /Nothing is deleted/.test(endBody), `the end confirm says what will happen (${endBody.replace(/\s+/g, " ").trim().slice(0, 90)})`);
+  check(/will close/.test(endBody) && /nothing is deleted/i.test(endBody), `the end confirm says what will happen (${endBody.replace(/\s+/g, " ").trim().slice(0, 90)})`);
   await dialogButton(gm, "no");
   await gm.waitForTimeout(800);
   check((await gameOn(MODULE_ID)) === true && (await boardRendered(bob)), "Cancel keeps the game on and Bob's board open");
-  check(await gm.evaluate(() => /still running/.test(document.querySelector("#notifications")?.textContent ?? "")),
+  check(await gm.evaluate(() => /mini-game is running/.test(document.querySelector("#notifications")?.textContent ?? "")),
     "a cancelled End says the game is still running");
   await menuEntries(gm);
-  await clickMenu(gm, "End the Penny Dreadful Mini Game");
+  await clickMenu(gm, "End the Penny Dreadful mini-game and close the scoreboard on every canvas");
   await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="yes"]'), null, { timeout: 5000 });
   await dialogButton(gm, "yes");
   await gm.waitForFunction(() => !foundry.applications.instances.get("pd-scoreboard")?.rendered, null, { timeout: 10000 })
@@ -603,7 +603,7 @@ try {
   await gm.evaluate(() => document.querySelector('#pd-scoreboard button[data-action="newOneShot"]').click());
   await gm.waitForFunction(() => !!document.querySelector('.pd-dialog button[data-action="yes"]'), null, { timeout: 10000 });
   const resetText = await gm.evaluate(() => [...document.querySelectorAll(".pd-dialog")].pop()?.querySelector(".window-content")?.textContent ?? "");
-  check(/fresh character is created/.test(resetText) && /host campaign/.test(resetText),
+  check(/will get a fresh PC/.test(resetText) && /other actors and chat are left alone/.test(resetText),
     `with the game running and auto-create on, the reset promises fresh PCs and spares the host (${resetText.replace(/\s+/g, " ").trim().slice(0, 120)})`);
   await clickDialogButton(gm, "yes");
   // ONE settle wait folding every end-state condition: the chat clear lands
